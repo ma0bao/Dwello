@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dwello — Your properties. Your people. All in one place.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forest: '#1B4332',
+            sage: '#40916C',
+            gold: '#D4A853',
+            offwhite: '#F8F6F1',
+            mint: '#B7E4C7',
+            slate: '#1A2420',
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', 'Georgia', 'serif'],
+            body: ['"DM Sans"', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --forest: #1B4332;
+      --sage: #40916C;
+      --gold: #D4A853;
+      --offwhite: #F8F6F1;
+      --mint: #B7E4C7;
+      --slate: #1A2420;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--offwhite);
+      color: var(--slate);
+      line-height: 1.7;
+      margin: 0;
+    }
+    h1, h2, h3, h4 {
+      font-family: 'Playfair Display', Georgia, serif;
+      letter-spacing: -0.03em;
+    }
+
+    /* SVG Noise Filter */
+    .noise-layer {
+      position: relative;
+    }
+    .noise-layer::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 1;
+      border-radius: inherit;
+    }
+
+    /* Layered shadows */
+    .shadow-forest {
+      box-shadow: 0 2px 4px rgba(27,67,50,0.08), 0 8px 24px rgba(27,67,50,0.12), 0 24px 48px rgba(27,67,50,0.06);
+    }
+    .shadow-card {
+      box-shadow: 0 1px 3px rgba(27,67,50,0.06), 0 4px 16px rgba(27,67,50,0.10), 0 12px 32px rgba(27,67,50,0.04);
+    }
+    .shadow-gold {
+      box-shadow: 0 2px 8px rgba(212,168,83,0.20), 0 8px 24px rgba(212,168,83,0.15);
+    }
+
+    /* View switching */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .animate-fade-up {
+      animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .animate-fade-up-delay-1 { animation-delay: 0.1s; opacity: 0; }
+    .animate-fade-up-delay-2 { animation-delay: 0.2s; opacity: 0; }
+    .animate-fade-up-delay-3 { animation-delay: 0.3s; opacity: 0; }
+    .animate-fade-up-delay-4 { animation-delay: 0.4s; opacity: 0; }
+
+    /* Buttons */
+    .btn-primary {
+      background-color: var(--forest);
+      color: var(--offwhite);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      padding: 14px 28px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease;
+      box-shadow: 0 2px 8px rgba(27,67,50,0.25), 0 8px 24px rgba(27,67,50,0.15);
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(27,67,50,0.30), 0 12px 32px rgba(27,67,50,0.18); }
+    .btn-primary:active { transform: translateY(0); opacity: 0.9; }
+    .btn-primary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--forest);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      padding: 13px 28px;
+      border-radius: 10px;
+      border: 2px solid var(--forest);
+      cursor: pointer;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease, background-color 0.2s ease;
+    }
+    .btn-secondary:hover { background-color: var(--forest); color: var(--offwhite); transform: translateY(-2px); }
+    .btn-secondary:active { transform: translateY(0); opacity: 0.9; }
+    .btn-secondary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+    .btn-gold {
+      background-color: var(--gold);
+      color: var(--slate);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      padding: 14px 28px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      letter-spacing: 0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), opacity 0.2s ease;
+      box-shadow: 0 2px 8px rgba(212,168,83,0.30), 0 8px 24px rgba(212,168,83,0.20);
+    }
+    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(212,168,83,0.40), 0 12px 32px rgba(212,168,83,0.25); }
+    .btn-gold:active { transform: translateY(0); opacity: 0.9; }
+    .btn-gold:focus-visible { outline: 3px solid var(--forest); outline-offset: 3px; }
+
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 13px;
+      border-radius: 8px;
+    }
+
+    /* Nav */
+    .nav-link {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--slate);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-link:hover { background-color: rgba(27,67,50,0.07); }
+    .nav-link:active { opacity: 0.7; }
+    .nav-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .nav-link.active-nav { background-color: var(--mint); color: var(--forest); font-weight: 600; }
+    .nav-link.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+
+    /* Property cards */
+    .property-card {
+      border-radius: 16px;
+      overflow: hidden;
+      background: white;
+      box-shadow: 0 1px 3px rgba(27,67,50,0.06), 0 4px 16px rgba(27,67,50,0.10), 0 12px 32px rgba(27,67,50,0.04);
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease;
+    }
+    .property-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(27,67,50,0.10), 0 16px 40px rgba(27,67,50,0.14), 0 32px 64px rgba(27,67,50,0.06); }
+
+    .property-img-wrap {
+      position: relative;
+      height: 200px;
+      overflow: hidden;
+    }
+    .property-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+    .property-img-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(27,67,50,0.85) 0%, rgba(27,67,50,0.30) 50%, transparent 100%);
+    }
+    .property-img-badge {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      background: rgba(212,168,83,0.92);
+      backdrop-filter: blur(8px);
+      color: var(--slate);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+
+    /* Dashboard surface */
+    .dash-surface {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(27,67,50,0.05), 0 4px 16px rgba(27,67,50,0.08);
+      padding: 24px;
+    }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--sage);
+      padding: 10px 16px;
+      text-align: left;
+      border-bottom: 2px solid var(--mint);
+    }
+    .data-table td {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(183,228,199,0.4);
+      color: var(--slate);
+    }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background-color: rgba(248,246,241,0.8); }
+
+    /* Messaging */
+    .msg-thread-item {
+      padding: 12px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .msg-thread-item:hover { background-color: rgba(183,228,199,0.3); }
+    .msg-thread-item.selected { background-color: var(--mint); }
+    .msg-thread-item:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+    .msg-bubble {
+      max-width: 72%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 14px;
+      line-height: 1.5;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .msg-bubble.sent {
+      background-color: var(--forest);
+      color: white;
+      border-bottom-right-radius: 4px;
+      margin-left: auto;
+    }
+    .msg-bubble.received {
+      background-color: white;
+      color: var(--slate);
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 4px rgba(27,67,50,0.08);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,36,32,0.55);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: var(--offwhite);
+      border-radius: 20px;
+      padding: 32px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 8px 32px rgba(27,67,50,0.20), 0 32px 64px rgba(27,67,50,0.15);
+      transform: translateY(16px);
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+      opacity: 0;
+    }
+    .modal-overlay.open .modal-box { transform: translateY(0); opacity: 1; }
+
+    /* Form inputs */
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: white;
+      border: 2px solid rgba(183,228,199,0.6);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--slate);
+      outline: none;
+      transition: opacity 0.15s ease;
+    }
+    .form-input:focus { border-color: var(--sage); box-shadow: 0 0 0 3px rgba(64,145,108,0.15); }
+    .form-input:focus-visible { border-color: var(--sage); }
+    .form-label {
+      display: block;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--forest);
+      margin-bottom: 6px;
+      letter-spacing: 0.02em;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: var(--forest);
+      padding: 24px 16px;
+      flex-shrink: 0;
+    }
+    .sidebar .nav-link { color: rgba(248,246,241,0.75); }
+    .sidebar .nav-link:hover { background-color: rgba(255,255,255,0.1); color: var(--offwhite); }
+    .sidebar .nav-link.active-nav { background-color: rgba(183,228,199,0.2); color: var(--mint); }
+    .sidebar .nav-link.disabled { opacity: 0.3; }
+
+    /* Chip */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.02em;
+    }
+    .chip-mint { background-color: var(--mint); color: var(--forest); }
+    .chip-gold { background-color: rgba(212,168,83,0.2); color: #8B6914; }
+    .chip-soon { background-color: rgba(26,36,32,0.1); color: rgba(26,36,32,0.5); font-size: 10px; }
+
+    /* Hero accent line */
+    .accent-line {
+      display: inline-block;
+      width: 48px;
+      height: 3px;
+      background: var(--gold);
+      border-radius: 2px;
+      vertical-align: middle;
+      margin-right: 12px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(27,67,50,0.2); border-radius: 3px; }
+
+    /* Compose area */
+    .compose-area {
+      border-top: 1px solid rgba(183,228,199,0.4);
+      padding: 16px;
+      background: white;
+    }
+    .compose-input {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--offwhite);
+      border: 2px solid transparent;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--slate);
+      outline: none;
+      resize: none;
+      transition: opacity 0.15s ease;
+    }
+    .compose-input:focus { border-color: var(--sage); background: white; }
+
+    /* Section labels */
+    .section-eyebrow {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--sage);
+    }
+
+    /* Stat cards */
+    .stat-card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(27,67,50,0.05), 0 4px 12px rgba(27,67,50,0.07);
+    }
+    .stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--forest);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+    .stat-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: rgba(26,36,32,0.55);
+      margin-top: 4px;
+    }
+
+    /* Divider */
+    .divider { height: 1px; background: rgba(183,228,199,0.5); margin: 0; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     SVG NOISE FILTER (hidden, referenced by CSS)
+════════════════════════════════════════════ -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="multiply"/>
+    </filter>
+  </defs>
+</svg>
+
+<!-- ═══════════════════════════════════════════
+     VIEW: LANDING PAGE
+════════════════════════════════════════════ -->
+<div id="view-landing" class="view active">
+  <!-- Nav -->
+  <nav style="position:fixed;top:0;left:0;right:0;z-index:40;background:rgba(248,246,241,0.90);backdrop-filter:blur(12px);border-bottom:1px solid rgba(183,228,199,0.4);">
+    <div style="max-width:1200px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--forest);letter-spacing:-0.03em;">
+        Dwello
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn-secondary btn-sm" onclick="showView('landlord')">I'm a Landlord</button>
+        <button class="btn-primary btn-sm" onclick="showView('tenant')">I'm a Tenant</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="noise-layer" style="min-height:100vh;background:linear-gradient(135deg,var(--forest) 0%,#2D6A4F 50%,#40916C 100%);display:flex;align-items:center;padding-top:68px;position:relative;overflow:hidden;">
+    <!-- Decorative circles -->
+    <div style="position:absolute;top:-80px;right:-80px;width:500px;height:500px;border-radius:50%;background:rgba(212,168,83,0.08);pointer-events:none;"></div>
+    <div style="position:absolute;bottom:-120px;left:-60px;width:400px;height:400px;border-radius:50%;background:rgba(183,228,199,0.06);pointer-events:none;"></div>
+    <div style="position:absolute;top:30%;left:55%;width:200px;height:200px;border-radius:50%;border:1px solid rgba(212,168,83,0.15);pointer-events:none;"></div>
+
+    <div style="max-width:1200px;margin:0 auto;padding:80px 32px;position:relative;z-index:2;">
+      <div style="max-width:680px;">
+        <div class="animate-fade-up">
+          <span class="section-eyebrow" style="color:rgba(183,228,199,0.8);">Property Management, Reimagined</span>
+        </div>
+        <h1 class="animate-fade-up animate-fade-up-delay-1" style="font-size:clamp(48px,6vw,80px);color:var(--offwhite);margin:20px 0 24px;line-height:1.05;">
+          Your properties.<br/>
+          <em style="color:var(--gold);">Your people.</em><br/>
+          All in one place.
+        </h1>
+        <p class="animate-fade-up animate-fade-up-delay-2" style="font-size:18px;color:rgba(248,246,241,0.75);max-width:520px;margin-bottom:40px;">
+          Dwello brings landlords and tenants together in a shared workspace — manage your portfolio, communicate clearly, and stay organized without the chaos.
+        </p>
+        <div class="animate-fade-up animate-fade-up-delay-3" style="display:flex;gap:16px;flex-wrap:wrap;">
+          <button class="btn-gold" onclick="showView('landlord')" style="font-size:16px;padding:16px 32px;">
+            I'm a Landlord
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <button class="btn-secondary" onclick="showView('tenant')" style="color:var(--offwhite);border-color:rgba(248,246,241,0.4);font-size:16px;padding:16px 32px;">
+            I'm a Tenant
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating card mockup -->
+    <div class="animate-fade-up animate-fade-up-delay-4" style="position:absolute;right:80px;top:50%;transform:translateY(-50%);width:320px;display:none;" id="hero-card">
+      <!-- shown on wider screens via JS -->
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section style="padding:100px 32px;max-width:1200px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:64px;">
+      <span class="section-eyebrow">What We Do</span>
+      <h2 style="font-size:clamp(32px,4vw,52px);margin-top:12px;color:var(--forest);">Everything you need,<br/>nothing you don't.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;">
+      <!-- Feature 1 -->
+      <div class="dash-surface" style="position:relative;overflow:hidden;">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--mint),var(--sage));border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3 style="font-size:22px;color:var(--forest);margin:0 0 12px;">Portfolio Overview</h3>
+        <p style="color:rgba(26,36,32,0.65);margin:0;font-size:15px;">See all your properties at a glance. Track tenant info, estimated values, and monthly rents from one clean dashboard.</p>
+        <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(183,228,199,0.2);"></div>
+      </div>
+      <!-- Feature 2 -->
+      <div class="dash-surface" style="position:relative;overflow:hidden;">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--gold),#E8B85E);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h3 style="font-size:22px;color:var(--forest);margin:0 0 12px;">Tenant Directory</h3>
+        <p style="color:rgba(26,36,32,0.65);margin:0;font-size:15px;">A living record of every tenant across your portfolio — lease dates, contact info, and a direct line to message them instantly.</p>
+        <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(212,168,83,0.1);"></div>
+      </div>
+      <!-- Feature 3 -->
+      <div class="dash-surface" style="position:relative;overflow:hidden;">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--forest),var(--sage));border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <h3 style="font-size:22px;color:var(--forest);margin:0 0 12px;">Messaging</h3>
+        <p style="color:rgba(26,36,32,0.65);margin:0;font-size:15px;">Clear, direct communication between landlords and tenants. No email chains, no missed calls — just organized conversations.</p>
+        <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(27,67,50,0.05);"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section style="background:var(--forest);padding:100px 32px;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:64px;">
+        <span class="section-eyebrow" style="color:var(--mint);">How It Works</span>
+        <h2 style="font-size:clamp(32px,4vw,52px);margin-top:12px;color:var(--offwhite);">Up and running<br/>in three steps.</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:40px;position:relative;">
+        <!-- Step 1 -->
+        <div style="text-align:center;">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(183,228,199,0.15);border:2px solid rgba(183,228,199,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;position:relative;">
+            <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);">1</span>
+          </div>
+          <h3 style="font-size:20px;color:var(--offwhite);margin:0 0 12px;">Add your properties</h3>
+          <p style="color:rgba(248,246,241,0.6);font-size:15px;margin:0;">List your properties with addresses, photos, and lease details in minutes.</p>
+        </div>
+        <!-- Step 2 -->
+        <div style="text-align:center;">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(183,228,199,0.15);border:2px solid rgba(183,228,199,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+            <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);">2</span>
+          </div>
+          <h3 style="font-size:20px;color:var(--offwhite);margin:0 0 12px;">Invite tenants</h3>
+          <p style="color:rgba(248,246,241,0.6);font-size:15px;margin:0;">Send an invite link and tenants get their own dashboard view tied to their unit.</p>
+        </div>
+        <!-- Step 3 -->
+        <div style="text-align:center;">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(183,228,199,0.15);border:2px solid rgba(183,228,199,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+            <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);">3</span>
+          </div>
+          <h3 style="font-size:20px;color:var(--offwhite);margin:0 0 12px;">Communicate &amp; manage</h3>
+          <p style="color:rgba(248,246,241,0.6);font-size:15px;margin:0;">Message directly, track maintenance requests, and stay organized — all in one place.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section style="padding:80px 32px;max-width:1200px;margin:0 auto;text-align:center;">
+    <div style="background:linear-gradient(135deg,#F0EDE6 0%,var(--offwhite) 100%);border-radius:24px;padding:64px 40px;border:1px solid rgba(183,228,199,0.5);box-shadow:0 4px 24px rgba(27,67,50,0.06),0 16px 48px rgba(27,67,50,0.04);">
+      <span class="section-eyebrow">Get Started Today</span>
+      <h2 style="font-size:clamp(28px,4vw,48px);margin:12px 0 20px;color:var(--forest);">Ready to simplify<br/>property management?</h2>
+      <p style="color:rgba(26,36,32,0.65);font-size:16px;max-width:480px;margin:0 auto 36px;">Join landlords and tenants who've made the switch to a calmer, clearer way of managing real estate.</p>
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="showView('landlord')" style="font-size:16px;padding:16px 32px;">
+          Start as a Landlord
+        </button>
+        <button class="btn-secondary" onclick="showView('tenant')" style="font-size:16px;padding:16px 32px;">
+          Join as a Tenant
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="background:var(--slate);padding:48px 32px;">
+    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--offwhite);letter-spacing:-0.03em;">Dwello</div>
+        <div style="font-size:13px;color:rgba(248,246,241,0.45);margin-top:4px;">Your properties. Your people. All in one place.</div>
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <a href="#" style="font-size:14px;color:rgba(248,246,241,0.55);text-decoration:none;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--offwhite)'" onmouseout="this.style.color='rgba(248,246,241,0.55)'">Features</a>
+        <a href="#" style="font-size:14px;color:rgba(248,246,241,0.55);text-decoration:none;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--offwhite)'" onmouseout="this.style.color='rgba(248,246,241,0.55)'">How It Works</a>
+        <a href="#" style="font-size:14px;color:rgba(248,246,241,0.55);text-decoration:none;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--offwhite)'" onmouseout="this.style.color='rgba(248,246,241,0.55)'">Privacy</a>
+        <a href="#" style="font-size:14px;color:rgba(248,246,241,0.55);text-decoration:none;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--offwhite)'" onmouseout="this.style.color='rgba(248,246,241,0.55)'">Contact</a>
+      </div>
+      <div style="font-size:13px;color:rgba(248,246,241,0.35);font-family:'DM Sans',sans-serif;">© 2025 Dwello</div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     VIEW: LANDLORD DASHBOARD
+════════════════════════════════════════════ -->
+<div id="view-landlord" class="view">
+  <div style="display:flex;min-height:100vh;">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="landlord-sidebar">
+      <div style="margin-bottom:32px;padding:0 8px;">
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--offwhite);letter-spacing:-0.03em;cursor:pointer;" onclick="showView('landing')">Dwello</div>
+        <div style="font-size:12px;color:rgba(248,246,241,0.4);margin-top:4px;">Landlord Portal</div>
+      </div>
+
+      <!-- User info -->
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.07);border-radius:12px;padding:12px;margin-bottom:28px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--slate);font-size:15px;flex-shrink:0;">M</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--offwhite);">Michael Torres</div>
+          <div style="font-size:12px;color:rgba(248,246,241,0.5);">Landlord</div>
+        </div>
+      </div>
+
+      <nav style="display:flex;flex-direction:column;gap:4px;">
+        <a class="nav-link active-nav" onclick="landlordSection('dashboard')" id="ln-dashboard">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="nav-link" onclick="landlordSection('properties')" id="ln-properties">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Properties
+        </a>
+        <a class="nav-link" onclick="landlordSection('tenants')" id="ln-tenants">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          Tenants
+        </a>
+        <a class="nav-link" onclick="landlordSection('messaging')" id="ln-messaging">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Messaging
+        </a>
+        <a class="nav-link disabled" style="margin-top:16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 10h2M6 10h8"/></svg>
+          Payments
+          <span class="chip chip-soon" style="margin-left:auto;">Soon</span>
+        </a>
+      </nav>
+
+      <div style="margin-top:auto;padding-top:40px;">
+        <button class="nav-link" style="width:100%;border:none;background:none;cursor:pointer;color:rgba(248,246,241,0.5);" onclick="showView('landing')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Back to Home
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main style="flex:1;background:var(--offwhite);overflow-y:auto;">
+      <!-- Top bar -->
+      <div style="background:white;border-bottom:1px solid rgba(183,228,199,0.4);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;">
+        <div>
+          <h2 style="font-size:20px;margin:0;color:var(--forest);" id="landlord-page-title">Dashboard</h2>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="btn-primary btn-sm" onclick="landlordSection('messaging')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Messages
+          </button>
+        </div>
+      </div>
+
+      <div style="padding:32px;">
+        <!-- ── Dashboard Section ── -->
+        <div id="ls-dashboard">
+          <!-- Stats row -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px;">
+            <div class="stat-card">
+              <div class="stat-value">3</div>
+              <div class="stat-label">Properties</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">3</div>
+              <div class="stat-label">Active Tenants</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">$6,950</div>
+              <div class="stat-label">Monthly Rent</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">$1.5M</div>
+              <div class="stat-label">Portfolio Value</div>
+            </div>
+          </div>
+
+          <!-- Recent activity -->
+          <div class="dash-surface" style="margin-bottom:24px;">
+            <h3 style="font-size:18px;color:var(--forest);margin:0 0 20px;">Recent Activity</h3>
+            <div style="display:flex;flex-direction:column;gap:0;">
+              <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(183,228,199,0.3);">
+                <div style="width:36px;height:36px;border-radius:10px;background:var(--mint);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:14px;font-weight:500;color:var(--slate);">New message from Sarah Mitchell</div>
+                  <div style="font-size:12px;color:rgba(26,36,32,0.5);">142 Maple Street · 2 hours ago</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(183,228,199,0.3);">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(212,168,83,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B6914" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:14px;font-weight:500;color:var(--slate);">Maintenance request submitted</div>
+                  <div style="font-size:12px;color:rgba(26,36,32,0.5);">331 Lakeview Drive · 1 day ago</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:14px 0;">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(27,67,50,0.08);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:14px;font-weight:500;color:var(--slate);">Lease renewal upcoming — James Okafor</div>
+                  <div style="font-size:12px;color:rgba(26,36,32,0.5);">78 Birchwood Ave · Dec 31, 2025</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick properties -->
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="font-size:18px;color:var(--forest);margin:0;">Your Properties</h3>
+            <button class="btn-secondary btn-sm" onclick="landlordSection('properties')">View All</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+            <!-- Cards rendered by JS -->
+          </div>
+        </div>
+
+        <!-- ── Properties Section ── -->
+        <div id="ls-properties" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+            <div>
+              <span class="section-eyebrow">Portfolio</span>
+              <h3 style="font-size:22px;color:var(--forest);margin:4px 0 0;">All Properties</h3>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;">
+            <!-- Cards rendered by JS -->
+          </div>
+        </div>
+
+        <!-- ── Tenants Section ── -->
+        <div id="ls-tenants" style="display:none;">
+          <div style="margin-bottom:24px;">
+            <span class="section-eyebrow">Directory</span>
+            <h3 style="font-size:22px;color:var(--forest);margin:4px 0 0;">All Tenants</h3>
+          </div>
+          <div class="dash-surface" style="padding:0;overflow:hidden;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Tenant</th>
+                  <th>Property</th>
+                  <th>Lease Start</th>
+                  <th>Lease End</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--sage));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--forest);">SM</div>
+                      <span style="font-weight:500;">Sarah Mitchell</span>
+                    </div>
+                  </td>
+                  <td style="color:rgba(26,36,32,0.65);">142 Maple Street, Austin TX</td>
+                  <td><span class="chip chip-mint">Jan 1, 2025</span></td>
+                  <td><span class="chip chip-gold">Dec 31, 2025</span></td>
+                  <td><button class="btn-primary btn-sm" onclick="landlordSection('messaging');setActiveThread(0)">Contact</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.6));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#8B6914;">JO</div>
+                      <span style="font-weight:500;">James Okafor</span>
+                    </div>
+                  </td>
+                  <td style="color:rgba(26,36,32,0.65);">78 Birchwood Ave, Denver CO</td>
+                  <td><span class="chip chip-mint">Jan 1, 2025</span></td>
+                  <td><span class="chip chip-gold">Dec 31, 2025</span></td>
+                  <td><button class="btn-primary btn-sm" onclick="landlordSection('messaging');setActiveThread(1)">Contact</button></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.3));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--forest);">PN</div>
+                      <span style="font-weight:500;">Priya Nair</span>
+                    </div>
+                  </td>
+                  <td style="color:rgba(26,36,32,0.65);">331 Lakeview Drive, Nashville TN</td>
+                  <td><span class="chip chip-mint">Jan 1, 2025</span></td>
+                  <td><span class="chip chip-gold">Dec 31, 2025</span></td>
+                  <td><button class="btn-primary btn-sm" onclick="landlordSection('messaging');setActiveThread(2)">Contact</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ── Messaging Section ── -->
+        <div id="ls-messaging" style="display:none;">
+          <div style="margin-bottom:20px;">
+            <span class="section-eyebrow">Inbox</span>
+            <h3 style="font-size:22px;color:var(--forest);margin:4px 0 0;">Messages</h3>
+          </div>
+          <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;height:calc(100vh - 220px);min-height:400px;">
+            <!-- Thread list -->
+            <div class="dash-surface" style="padding:16px;overflow-y:auto;">
+              <div style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--sage);margin-bottom:12px;">Conversations</div>
+              <div style="display:flex;flex-direction:column;gap:4px;">
+                <div class="msg-thread-item selected" id="lt-0" tabindex="0" onclick="setActiveThread(0)" onkeydown="if(event.key==='Enter')setActiveThread(0)">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--sage));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--forest);flex-shrink:0;">SM</div>
+                    <div style="min-width:0;">
+                      <div style="font-size:14px;font-weight:600;color:var(--slate);">Sarah Mitchell</div>
+                      <div style="font-size:12px;color:rgba(26,36,32,0.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Hi Michael, just wanted to check in...</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="msg-thread-item" id="lt-1" tabindex="0" onclick="setActiveThread(1)" onkeydown="if(event.key==='Enter')setActiveThread(1)">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.6));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#8B6914;flex-shrink:0;">JO</div>
+                    <div style="min-width:0;">
+                      <div style="font-size:14px;font-weight:600;color:var(--slate);">James Okafor</div>
+                      <div style="font-size:12px;color:rgba(26,36,32,0.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Thanks for the quick response!</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="msg-thread-item" id="lt-2" tabindex="0" onclick="setActiveThread(2)" onkeydown="if(event.key==='Enter')setActiveThread(2)">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.3));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--forest);flex-shrink:0;">PN</div>
+                    <div style="min-width:0;">
+                      <div style="font-size:14px;font-weight:600;color:var(--slate);">Priya Nair</div>
+                      <div style="font-size:12px;color:rgba(26,36,32,0.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">The maintenance team was great...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Message view -->
+            <div class="dash-surface" style="padding:0;display:flex;flex-direction:column;overflow:hidden;">
+              <div style="padding:16px 20px;border-bottom:1px solid rgba(183,228,199,0.4);display:flex;align-items:center;gap:12px;">
+                <div id="msg-avatar" style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--sage));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--forest);">SM</div>
+                <div>
+                  <div id="msg-name" style="font-size:15px;font-weight:600;color:var(--slate);">Sarah Mitchell</div>
+                  <div id="msg-property" style="font-size:12px;color:rgba(26,36,32,0.5);">142 Maple Street, Austin TX</div>
+                </div>
+              </div>
+              <!-- Messages -->
+              <div id="landlord-msg-thread" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;">
+                <!-- Populated by JS -->
+              </div>
+              <!-- Compose -->
+              <div class="compose-area" style="display:flex;gap:10px;align-items:flex-end;">
+                <textarea class="compose-input" id="landlord-compose" rows="2" placeholder="Write a message…" style="flex:1;"></textarea>
+                <button class="btn-primary btn-sm" onclick="sendLandlordMessage()" style="flex-shrink:0;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     VIEW: TENANT DASHBOARD
+════════════════════════════════════════════ -->
+<div id="view-tenant" class="view">
+  <div style="display:flex;min-height:100vh;">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div style="margin-bottom:32px;padding:0 8px;">
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--offwhite);letter-spacing:-0.03em;cursor:pointer;" onclick="showView('landing')">Dwello</div>
+        <div style="font-size:12px;color:rgba(248,246,241,0.4);margin-top:4px;">Tenant Portal</div>
+      </div>
+
+      <!-- User info -->
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.07);border-radius:12px;padding:12px;margin-bottom:28px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--mint);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-weight:700;color:var(--forest);font-size:15px;flex-shrink:0;">S</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--offwhite);">Sarah Mitchell</div>
+          <div style="font-size:12px;color:rgba(248,246,241,0.5);">Tenant</div>
+        </div>
+      </div>
+
+      <nav style="display:flex;flex-direction:column;gap:4px;">
+        <a class="nav-link active-nav" onclick="tenantSection('home')" id="tn-home">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          My Home
+        </a>
+        <a class="nav-link" onclick="tenantSection('messages')" id="tn-messages">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Messages
+        </a>
+        <a class="nav-link" onclick="tenantSection('maintenance')" id="tn-maintenance">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+          Maintenance
+        </a>
+        <a class="nav-link disabled" style="margin-top:16px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+          Payments
+          <span class="chip chip-soon" style="margin-left:auto;">Soon</span>
+        </a>
+      </nav>
+
+      <div style="margin-top:auto;padding-top:40px;">
+        <button class="nav-link" style="width:100%;border:none;background:none;cursor:pointer;color:rgba(248,246,241,0.5);" onclick="showView('landing')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Back to Home
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main style="flex:1;background:var(--offwhite);overflow-y:auto;">
+      <!-- Top bar -->
+      <div style="background:white;border-bottom:1px solid rgba(183,228,199,0.4);padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;">
+        <h2 style="font-size:20px;margin:0;color:var(--forest);" id="tenant-page-title">My Home</h2>
+        <button class="btn-primary btn-sm" onclick="tenantSection('messages')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Contact Landlord
+        </button>
+      </div>
+
+      <div style="padding:32px;">
+        <!-- ── Home Section ── -->
+        <div id="ts-home">
+          <!-- Unit card -->
+          <div style="margin-bottom:24px;background:linear-gradient(135deg,var(--forest) 0%,var(--sage) 100%);border-radius:20px;overflow:hidden;position:relative;box-shadow:0 4px 24px rgba(27,67,50,0.25),0 16px 48px rgba(27,67,50,0.15);">
+            <div style="position:absolute;top:-40px;right:-40px;width:200px;height:200px;border-radius:50%;background:rgba(212,168,83,0.1);pointer-events:none;"></div>
+            <div style="position:absolute;bottom:-60px;left:40%;width:200px;height:200px;border-radius:50%;background:rgba(183,228,199,0.08);pointer-events:none;"></div>
+            <div style="padding:32px;position:relative;z-index:2;">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+                <div>
+                  <div style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:rgba(183,228,199,0.7);margin-bottom:8px;">My Unit</div>
+                  <h2 style="font-size:28px;color:var(--offwhite);margin:0 0 4px;">142 Maple Street</h2>
+                  <div style="font-size:16px;color:rgba(248,246,241,0.7);">Austin, TX</div>
+                </div>
+                <div style="background:rgba(212,168,83,0.2);border:1px solid rgba(212,168,83,0.3);border-radius:12px;padding:16px 20px;backdrop-filter:blur(8px);">
+                  <div style="font-size:12px;color:rgba(248,246,241,0.6);margin-bottom:4px;">Monthly Rent</div>
+                  <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--gold);">$2,200</div>
+                </div>
+              </div>
+              <div style="margin-top:24px;display:flex;gap:24px;flex-wrap:wrap;">
+                <div>
+                  <div style="font-size:12px;color:rgba(248,246,241,0.55);margin-bottom:4px;">Landlord</div>
+                  <div style="font-size:15px;font-weight:600;color:var(--offwhite);">Michael Torres</div>
+                </div>
+                <div>
+                  <div style="font-size:12px;color:rgba(248,246,241,0.55);margin-bottom:4px;">Lease Start</div>
+                  <div style="font-size:15px;font-weight:600;color:var(--offwhite);">January 1, 2025</div>
+                </div>
+                <div>
+                  <div style="font-size:12px;color:rgba(248,246,241,0.55);margin-bottom:4px;">Lease End</div>
+                  <div style="font-size:15px;font-weight:600;color:var(--offwhite);">December 31, 2025</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick actions -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;">
+            <button class="dash-surface" style="text-align:left;cursor:pointer;border:none;background:white;border-left:4px solid var(--sage);" onclick="tenantSection('messages')"
+              onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''" onfocus="this.style.outline='3px solid #D4A853'" onblur="this.style.outline=''">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:var(--mint);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:14px;font-weight:600;color:var(--slate);">Contact Landlord</div>
+                  <div style="font-size:12px;color:rgba(26,36,32,0.5);">Send a message</div>
+                </div>
+              </div>
+            </button>
+            <button class="dash-surface" style="text-align:left;cursor:pointer;border:none;background:white;border-left:4px solid var(--gold);" onclick="openMaintenanceModal()"
+              onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''" onfocus="this.style.outline='3px solid #D4A853'" onblur="this.style.outline=''">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:40px;height:40px;border-radius:10px;background:rgba(212,168,83,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B6914" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:14px;font-weight:600;color:var(--slate);">Maintenance Request</div>
+                  <div style="font-size:12px;color:rgba(26,36,32,0.5);">Report an issue</div>
+                </div>
+              </div>
+            </button>
+          </div>
+
+          <!-- Lease timeline -->
+          <div class="dash-surface">
+            <h3 style="font-size:18px;color:var(--forest);margin:0 0 20px;">Lease Timeline</h3>
+            <div style="position:relative;padding:8px 0;">
+              <div style="height:6px;background:var(--mint);border-radius:3px;position:relative;overflow:hidden;">
+                <div style="position:absolute;left:0;top:0;bottom:0;width:38%;background:var(--sage);border-radius:3px;"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:12px;">
+                <div>
+                  <div style="font-size:12px;color:rgba(26,36,32,0.5);">Start</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--slate);">Jan 1, 2025</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-size:12px;color:rgba(26,36,32,0.5);">Today</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--sage);">38% through</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:12px;color:rgba(26,36,32,0.5);">End</div>
+                  <div style="font-size:14px;font-weight:600;color:var(--slate);">Dec 31, 2025</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Messages Section (Tenant) ── -->
+        <div id="ts-messages" style="display:none;">
+          <div style="margin-bottom:20px;">
+            <span class="section-eyebrow">Inbox</span>
+            <h3 style="font-size:22px;color:var(--forest);margin:4px 0 0;">Messages</h3>
+          </div>
+          <div class="dash-surface" style="padding:0;display:flex;flex-direction:column;height:calc(100vh - 220px);min-height:400px;overflow:hidden;">
+            <!-- Header -->
+            <div style="padding:16px 20px;border-bottom:1px solid rgba(183,228,199,0.4);display:flex;align-items:center;gap:12px;">
+              <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--forest),var(--sage));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--offwhite);">MT</div>
+              <div>
+                <div style="font-size:15px;font-weight:600;color:var(--slate);">Michael Torres</div>
+                <div style="font-size:12px;color:rgba(26,36,32,0.5);">Your Landlord · 142 Maple Street</div>
+              </div>
+            </div>
+            <!-- Messages -->
+            <div id="tenant-msg-thread" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px;">
+              <div style="text-align:center;margin:8px 0;">
+                <span style="font-size:12px;color:rgba(26,36,32,0.4);background:var(--offwhite);padding:4px 12px;border-radius:100px;">Today</span>
+              </div>
+              <div style="display:flex;justify-content:flex-start;">
+                <div class="msg-bubble received">Hi Sarah! Hope you're settling in well. Let me know if you need anything.</div>
+              </div>
+              <div style="display:flex;justify-content:flex-end;">
+                <div class="msg-bubble sent">Hi Michael, just wanted to check in about the heater — it's been making a noise but working fine. Should I report it?</div>
+              </div>
+              <div style="display:flex;justify-content:flex-start;">
+                <div class="msg-bubble received">Absolutely, go ahead and submit a maintenance request. I'll have someone look at it this week.</div>
+              </div>
+              <div style="display:flex;justify-content:flex-end;">
+                <div class="msg-bubble sent">Perfect, thank you! I'll do that now.</div>
+              </div>
+            </div>
+            <!-- Compose -->
+            <div class="compose-area" style="display:flex;gap:10px;align-items:flex-end;">
+              <textarea class="compose-input" id="tenant-compose" rows="2" placeholder="Write a message…" style="flex:1;"></textarea>
+              <button class="btn-primary btn-sm" onclick="sendTenantMessage()" style="flex-shrink:0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Maintenance Section ── -->
+        <div id="ts-maintenance" style="display:none;">
+          <div style="margin-bottom:24px;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;">
+            <div>
+              <span class="section-eyebrow">Support</span>
+              <h3 style="font-size:22px;color:var(--forest);margin:4px 0 0;">Maintenance Requests</h3>
+            </div>
+            <button class="btn-gold" onclick="openMaintenanceModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Request
+            </button>
+          </div>
+
+          <div class="dash-surface" style="margin-bottom:16px;">
+            <div style="display:flex;align-items:flex-start;gap:16px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(212,168,83,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8B6914" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                  <div>
+                    <div style="font-size:15px;font-weight:600;color:var(--slate);">Heater making noise</div>
+                    <div style="font-size:13px;color:rgba(26,36,32,0.55);margin-top:2px;">Submitted May 14, 2025</div>
+                  </div>
+                  <span class="chip" style="background:rgba(212,168,83,0.15);color:#8B6914;">In Progress</span>
+                </div>
+                <div style="font-size:14px;color:rgba(26,36,32,0.65);margin-top:8px;">The heater in the living room has been making a rattling noise, but still produces heat. Submitted for inspection.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-surface">
+            <div style="display:flex;align-items:flex-start;gap:16px;">
+              <div style="width:40px;height:40px;border-radius:10px;background:var(--mint);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <div style="flex:1;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+                  <div>
+                    <div style="font-size:15px;font-weight:600;color:var(--slate);">Leaky kitchen faucet</div>
+                    <div style="font-size:13px;color:rgba(26,36,32,0.55);margin-top:2px;">Submitted Feb 3, 2025</div>
+                  </div>
+                  <span class="chip chip-mint">Resolved</span>
+                </div>
+                <div style="font-size:14px;color:rgba(26,36,32,0.65);margin-top:8px;">Kitchen faucet was dripping. Fixed by maintenance on Feb 5.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MAINTENANCE MODAL
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="maintenance-modal" onclick="closeMaintenanceModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h3 style="font-size:22px;color:var(--forest);margin:0;">New Maintenance Request</h3>
+      <button onclick="closeMaintenanceModal()" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(27,67,50,0.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--slate);" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form onsubmit="submitMaintenance(event)">
+      <div style="margin-bottom:16px;">
+        <label class="form-label" for="maint-label">Issue Label</label>
+        <input class="form-input" id="maint-label" type="text" placeholder="e.g., Broken window latch" required />
+      </div>
+      <div style="margin-bottom:24px;">
+        <label class="form-label" for="maint-desc">Description</label>
+        <textarea class="form-input" id="maint-desc" rows="4" placeholder="Describe the issue in detail…" required style="resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="button" class="btn-secondary btn-sm" onclick="closeMaintenanceModal()">Cancel</button>
+        <button type="submit" class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Submit Request
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SUCCESS TOAST
+════════════════════════════════════════════ -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--forest);color:var(--offwhite);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:14px 20px;border-radius:12px;box-shadow:0 4px 24px rgba(27,67,50,0.30);opacity:0;transform:translateY(8px);transition:opacity 0.25s ease,transform 0.25s cubic-bezier(0.16,1,0.3,1);pointer-events:none;display:flex;align-items:center;gap:10px;z-index:100;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg">Done!</span>
+</div>
+
+<script>
+// ═══════════════════════════════
+// PROPERTY DATA
+// ═══════════════════════════════
+const properties = [
+  {
+    address: '142 Maple Street',
+    city: 'Austin, TX',
+    tenant: 'Sarah Mitchell',
+    initials: 'SM',
+    value: '$485,000',
+    rent: '$2,200/mo',
+    img: 'https://placehold.co/400x200/2D6A4F/B7E4C7?text=142+Maple+St',
+    colorA: '#1B4332', colorB: '#40916C',
+  },
+  {
+    address: '78 Birchwood Ave',
+    city: 'Denver, CO',
+    tenant: 'James Okafor',
+    initials: 'JO',
+    value: '$620,000',
+    rent: '$2,800/mo',
+    img: 'https://placehold.co/400x200/D4A853/1A2420?text=78+Birchwood+Ave',
+    colorA: '#8B6914', colorB: '#D4A853',
+  },
+  {
+    address: '331 Lakeview Drive',
+    city: 'Nashville, TN',
+    tenant: 'Priya Nair',
+    initials: 'PN',
+    value: '$395,000',
+    rent: '$1,950/mo',
+    img: 'https://placehold.co/400x200/40916C/F8F6F1?text=331+Lakeview+Dr',
+    colorA: '#2D6A4F', colorB: '#74C69D',
+  },
+];
+
+const threads = [
+  {
+    name: 'Sarah Mitchell',
+    initials: 'SM',
+    property: '142 Maple Street, Austin TX',
+    avatarGrad: 'linear-gradient(135deg,#B7E4C7,#40916C)',
+    avatarColor: '#1B4332',
+    messages: [
+      { sent: false, text: 'Hi Michael, just wanted to check in about the heater — it\'s making a noise.' },
+      { sent: true, text: 'Thanks for letting me know Sarah! I\'ll schedule a maintenance visit this week.' },
+      { sent: false, text: 'That would be great, thank you!' },
+    ]
+  },
+  {
+    name: 'James Okafor',
+    initials: 'JO',
+    property: '78 Birchwood Ave, Denver CO',
+    avatarGrad: 'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))',
+    avatarColor: '#8B6914',
+    messages: [
+      { sent: false, text: 'Hi, I wanted to confirm the lease renewal timeline.' },
+      { sent: true, text: 'Hi James! I\'ll send you a renewal agreement by end of November.' },
+      { sent: false, text: 'Thanks for the quick response!' },
+    ]
+  },
+  {
+    name: 'Priya Nair',
+    initials: 'PN',
+    property: '331 Lakeview Drive, Nashville TN',
+    avatarGrad: 'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))',
+    avatarColor: '#1B4332',
+    messages: [
+      { sent: false, text: 'Hello! The maintenance team just left — the faucet is all fixed.' },
+      { sent: true, text: 'Wonderful, so glad to hear that Priya! Let me know if anything else comes up.' },
+      { sent: false, text: 'The maintenance team was great, will do!' },
+    ]
+  }
+];
+
+let activeThread = 0;
+
+// ═══════════════════════════════
+// VIEW SWITCHING
+// ═══════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'landlord') {
+    renderPropertyCards('#ls-dashboard > div:last-child', true);
+    renderPropertyCards('#ls-properties > div:last-child', false);
+    renderThread(activeThread);
+  }
+}
+
+// ═══════════════════════════════
+// LANDLORD SECTION NAV
+// ═══════════════════════════════
+const landlordSections = ['dashboard', 'properties', 'tenants', 'messaging'];
+function landlordSection(name) {
+  landlordSections.forEach(s => {
+    const el = document.getElementById('ls-' + s);
+    const ln = document.getElementById('ln-' + s);
+    if (el) el.style.display = s === name ? '' : 'none';
+    if (ln) {
+      ln.classList.toggle('active-nav', s === name);
+    }
+  });
+  const titles = { dashboard: 'Dashboard', properties: 'Properties', tenants: 'Tenants', messaging: 'Messages' };
+  document.getElementById('landlord-page-title').textContent = titles[name] || '';
+}
+
+// ═══════════════════════════════
+// TENANT SECTION NAV
+// ═══════════════════════════════
+const tenantSections = ['home', 'messages', 'maintenance'];
+function tenantSection(name) {
+  tenantSections.forEach(s => {
+    const el = document.getElementById('ts-' + s);
+    const tn = document.getElementById('tn-' + s);
+    if (el) el.style.display = s === name ? '' : 'none';
+    if (tn) tn.classList.toggle('active-nav', s === name);
+  });
+  const titles = { home: 'My Home', messages: 'Messages', maintenance: 'Maintenance' };
+  document.getElementById('tenant-page-title').textContent = titles[name] || '';
+}
+
+// ═══════════════════════════════
+// PROPERTY CARDS
+// ═══════════════════════════════
+function renderPropertyCards(selector, compact) {
+  const container = document.querySelector(selector);
+  if (!container) return;
+  container.innerHTML = properties.map((p, i) => `
+    <div class="property-card">
+      <div class="property-img-wrap">
+        <img src="${p.img}" alt="${p.address}" loading="lazy" />
+        <div class="property-img-gradient"></div>
+        <div class="property-img-badge">${p.rent}</div>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+          <div>
+            <div style="font-size:16px;font-weight:600;color:var(--slate);font-family:'Playfair Display',serif;letter-spacing:-0.02em;">${p.address}</div>
+            <div style="font-size:13px;color:rgba(26,36,32,0.55);margin-top:2px;">${p.city}</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--sage);text-align:right;font-family:'DM Sans',sans-serif;">${p.value}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:${p.avatarGrad || 'linear-gradient(135deg,var(--mint),var(--sage))'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${p.avatarColor || 'var(--forest)'};flex-shrink:0;">${p.initials}</div>
+          <span style="font-size:13px;color:rgba(26,36,32,0.65);">${p.tenant}</span>
+        </div>
+        <button class="btn-primary btn-sm" style="width:100%;justify-content:center;" onclick="landlordSection('tenants')">
+          View Tenant
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// patch avatar gradient on properties
+properties[0].avatarGrad = 'linear-gradient(135deg,#B7E4C7,#40916C)';
+properties[0].avatarColor = '#1B4332';
+properties[1].avatarGrad = 'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))';
+properties[1].avatarColor = '#8B6914';
+properties[2].avatarGrad = 'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))';
+properties[2].avatarColor = '#1B4332';
+
+// ═══════════════════════════════
+// MESSAGING
+// ═══════════════════════════════
+function setActiveThread(idx) {
+  activeThread = idx;
+  const t = threads[idx];
+  // Update thread list selection
+  threads.forEach((_, i) => {
+    const el = document.getElementById('lt-' + i);
+    if (el) el.classList.toggle('selected', i === idx);
+  });
+  // Update header
+  document.getElementById('msg-avatar').style.background = t.avatarGrad;
+  document.getElementById('msg-avatar').style.color = t.avatarColor;
+  document.getElementById('msg-avatar').textContent = t.initials;
+  document.getElementById('msg-name').textContent = t.name;
+  document.getElementById('msg-property').textContent = t.property;
+  renderThread(idx);
+}
+
+function renderThread(idx) {
+  const t = threads[idx];
+  const container = document.getElementById('landlord-msg-thread');
+  if (!container) return;
+  container.innerHTML = `
+    <div style="text-align:center;margin:8px 0;">
+      <span style="font-size:12px;color:rgba(26,36,32,0.4);background:var(--offwhite);padding:4px 12px;border-radius:100px;">Today</span>
+    </div>
+    ${t.messages.map(m => `
+      <div style="display:flex;justify-content:${m.sent ? 'flex-end' : 'flex-start'};">
+        <div class="msg-bubble ${m.sent ? 'sent' : 'received'}">${m.text}</div>
+      </div>
+    `).join('')}
+  `;
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendLandlordMessage() {
+  const input = document.getElementById('landlord-compose');
+  const text = input.value.trim();
+  if (!text) return;
+  threads[activeThread].messages.push({ sent: true, text });
+  input.value = '';
+  renderThread(activeThread);
+  showToast('Message sent');
+}
+
+function sendTenantMessage() {
+  const input = document.getElementById('tenant-compose');
+  const text = input.value.trim();
+  if (!text) return;
+  const thread = document.getElementById('tenant-msg-thread');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;justify-content:flex-end;';
+  div.innerHTML = `<div class="msg-bubble sent">${text}</div>`;
+  thread.appendChild(div);
+  thread.scrollTop = thread.scrollHeight;
+  input.value = '';
+  showToast('Message sent');
+}
+
+// ═══════════════════════════════
+// MAINTENANCE MODAL
+// ═══════════════════════════════
+function openMaintenanceModal() {
+  document.getElementById('maintenance-modal').classList.add('open');
+}
+function closeMaintenanceModal(e) {
+  if (!e || e.target === document.getElementById('maintenance-modal')) {
+    document.getElementById('maintenance-modal').classList.remove('open');
+  }
+}
+function submitMaintenance(e) {
+  e.preventDefault();
+  const label = document.getElementById('maint-label').value;
+  document.getElementById('maint-label').value = '';
+  document.getElementById('maint-desc').value = '';
+  document.getElementById('maintenance-modal').classList.remove('open');
+  showToast('Maintenance request submitted');
+}
+
+// ═══════════════════════════════
+// TOAST
+// ═══════════════════════════════
+let toastTimeout;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateY(0)';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(8px)';
+  }, 3000);
+}
+
+// ═══════════════════════════════
+// KEYBOARD: close modal on Escape
+// ═══════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('maintenance-modal').classList.remove('open');
+  }
+});
+
+// ═══════════════════════════════
+// INIT
+// ═══════════════════════════════
+// Render landlord cards on load
+renderPropertyCards('#ls-dashboard > div:last-child', true);
+renderPropertyCards('#ls-properties > div:last-child', false);
+renderThread(0);
+</script>
+</body>
+</html>
