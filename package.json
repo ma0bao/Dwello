@@ -1,0 +1,24 @@
+{
+  "name": "dwello-email-service",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Email backend service for Dwello property management",
+  "main": "email-server.mjs",
+  "scripts": {
+    "start": "node email-server.mjs",
+    "email-server": "node email-server.mjs",
+    "dev": "nodemon email-server.mjs"
+  },
+  "keywords": ["email", "nodemailer", "express", "dwello"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

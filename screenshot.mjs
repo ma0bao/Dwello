@@ -7,8 +7,8 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 async function screenshot(page, name, setup) {
   if (setup) await setup(page);
   await delay(800);
-  await page.screenshot({ path: `screenshot-${name}.png`, fullPage: false });
-  console.log(`✓ screenshot-${name}.png`);
+  await page.screenshot({ path: `temporary screenshots/screenshot-${name}.png`, fullPage: false });
+  console.log(`✓ temporary screenshots/screenshot-${name}.png`);
 }
 
 (async () => {

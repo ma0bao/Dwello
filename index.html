@@ -439,6 +439,81 @@
 
     /* Divider */
     .divider { height: 1px; background: rgba(183,228,199,0.5); margin: 0; }
+
+    /* Add Property Modal */
+    .add-prop-modal-box {
+      background: white;
+      border-radius: 20px;
+      padding: 36px;
+      max-width: 620px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(27,67,50,0.20), 0 32px 64px rgba(27,67,50,0.15);
+      transform: scale(0.97);
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1), opacity 0.3s ease;
+      opacity: 0;
+    }
+    .modal-overlay.open .add-prop-modal-box { transform: scale(1); opacity: 1; }
+
+    /* Field error states */
+    .field-invalid { border-color: #D9534F !important; box-shadow: 0 0 0 3px rgba(217,83,79,0.12) !important; }
+    .field-error-msg { font-size: 12px; color: #D9534F; margin-top: 5px; font-family: 'DM Sans', sans-serif; display: none; }
+
+    /* Form section divider label */
+    .form-section-label {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(183,228,199,0.5);
+    }
+
+    /* Zillow lookup spinner */
+    .lookup-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(27,67,50,0.2);
+      border-top-color: var(--forest);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Auto-filled field indicator */
+    .field-autofilled {
+      background: linear-gradient(to right, rgba(183,228,199,0.18), transparent) !important;
+      border-color: var(--sage) !important;
+    }
+
+    /* Photo mode tabs */
+    .photo-tab {
+      flex: 1;
+      padding: 8px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      border: none;
+    }
+    .photo-tab.active {
+      background: var(--forest);
+      color: white;
+    }
+    .photo-tab:not(.active) {
+      background: transparent;
+      color: var(--forest);
+      border: 1px solid var(--forest);
+    }
   </style>
 </head>
 <body>
@@ -694,19 +769,19 @@
           <!-- Stats row -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:32px;">
             <div class="stat-card">
-              <div class="stat-value">3</div>
+              <div class="stat-value" id="stat-properties">3</div>
               <div class="stat-label">Properties</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value">3</div>
+              <div class="stat-value" id="stat-tenants">3</div>
               <div class="stat-label">Active Tenants</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value">$6,950</div>
+              <div class="stat-value" id="stat-rent">$6,950</div>
               <div class="stat-label">Monthly Rent</div>
             </div>
             <div class="stat-card">
-              <div class="stat-value">$1.5M</div>
+              <div class="stat-value" id="stat-value">$1.5M</div>
               <div class="stat-label">Portfolio Value</div>
             </div>
           </div>
@@ -748,9 +823,15 @@
           <!-- Quick properties -->
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
             <h3 style="font-size:18px;color:var(--forest);margin:0;">Your Properties</h3>
-            <button class="btn-secondary btn-sm" onclick="landlordSection('properties')">View All</button>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn-gold btn-sm" onclick="openAddPropertyModal()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Property
+              </button>
+              <button class="btn-secondary btn-sm" onclick="landlordSection('properties')">View All</button>
+            </div>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+          <div id="dashboard-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
             <!-- Cards rendered by JS -->
           </div>
         </div>
@@ -762,8 +843,12 @@
               <span class="section-eyebrow">Portfolio</span>
               <h3 style="font-size:22px;color:var(--forest);margin:4px 0 0;">All Properties</h3>
             </div>
+            <button class="btn-gold" onclick="openAddPropertyModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              + Add Property
+            </button>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;">
+          <div id="properties-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;">
             <!-- Cards rendered by JS -->
           </div>
         </div>
@@ -785,7 +870,7 @@
                   <th>Action</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody id="tenant-table-body">
                 <tr>
                   <td>
                     <div style="display:flex;align-items:center;gap:10px;">
@@ -796,7 +881,7 @@
                   <td style="color:rgba(26,36,32,0.65);">142 Maple Street, Austin TX</td>
                   <td><span class="chip chip-mint">Jan 1, 2025</span></td>
                   <td><span class="chip chip-gold">Dec 31, 2025</span></td>
-                  <td><button class="btn-primary btn-sm" onclick="landlordSection('messaging');setActiveThread(0)">Contact</button></td>
+                  <td><button class="btn-primary btn-sm" onclick="openEmailModal(0)">Contact</button></td>
                 </tr>
                 <tr>
                   <td>
@@ -808,7 +893,7 @@
                   <td style="color:rgba(26,36,32,0.65);">78 Birchwood Ave, Denver CO</td>
                   <td><span class="chip chip-mint">Jan 1, 2025</span></td>
                   <td><span class="chip chip-gold">Dec 31, 2025</span></td>
-                  <td><button class="btn-primary btn-sm" onclick="landlordSection('messaging');setActiveThread(1)">Contact</button></td>
+                  <td><button class="btn-primary btn-sm" onclick="openEmailModal(1)">Contact</button></td>
                 </tr>
                 <tr>
                   <td>
@@ -820,7 +905,7 @@
                   <td style="color:rgba(26,36,32,0.65);">331 Lakeview Drive, Nashville TN</td>
                   <td><span class="chip chip-mint">Jan 1, 2025</span></td>
                   <td><span class="chip chip-gold">Dec 31, 2025</span></td>
-                  <td><button class="btn-primary btn-sm" onclick="landlordSection('messaging');setActiveThread(2)">Contact</button></td>
+                  <td><button class="btn-primary btn-sm" onclick="openEmailModal(2)">Contact</button></td>
                 </tr>
               </tbody>
             </table>
@@ -1176,6 +1261,208 @@
 </div>
 
 <!-- ═══════════════════════════════════════════
+     EMAIL TENANT MODAL
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="email-modal" onclick="closeEmailModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:500px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h3 style="font-size:22px;color:var(--forest);margin:0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+        Email Tenant
+      </h3>
+      <button onclick="closeEmailModal()" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(27,67,50,0.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--slate);" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Recipient Info -->
+    <div style="background:rgba(183,228,199,0.2);border-radius:12px;padding:16px;margin-bottom:20px;border:1px solid rgba(64,145,108,0.15);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="email-recipient-avatar" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;"></div>
+        <div>
+          <div id="email-recipient-name" style="font-weight:600;color:var(--forest);font-size:15px;"></div>
+          <div id="email-recipient-email" style="font-size:13px;color:rgba(26,36,32,0.6);"></div>
+          <div id="email-recipient-property" style="font-size:12px;color:rgba(26,36,32,0.5);margin-top:2px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <form onsubmit="sendTenantEmail(event)">
+      <div style="margin-bottom:16px;">
+        <label class="form-label" for="email-subject">Subject</label>
+        <input class="form-input" id="email-subject" type="text" placeholder="e.g., Lease Renewal Reminder" required />
+      </div>
+      <div style="margin-bottom:24px;">
+        <label class="form-label" for="email-message">Message</label>
+        <textarea class="form-input" id="email-message" rows="6" placeholder="Write your message to the tenant…" required style="resize:vertical;"></textarea>
+      </div>
+
+      <!-- Sending indicator -->
+      <div id="email-sending-status" style="display:none;margin-bottom:16px;padding:12px;border-radius:8px;text-align:center;font-size:14px;"></div>
+
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="button" class="btn-secondary btn-sm" onclick="closeEmailModal()">Cancel</button>
+        <button type="submit" class="btn-primary" id="email-send-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+          Send Email
+        </button>
+      </div>
+    </form>
+
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(27,67,50,0.1);font-size:12px;color:rgba(26,36,32,0.5);text-align:center;">
+      Email will be sent from <strong>dwellosupport@gmail.com</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ADD PROPERTY MODAL
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="add-property-modal" onclick="closeAddPropertyModal(event)">
+  <div class="add-prop-modal-box" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div>
+        <h3 style="font-size:24px;color:var(--forest);margin:0 0 6px;">Add a Property</h3>
+        <p style="font-size:14px;color:rgba(26,36,32,0.55);margin:0;font-family:'DM Sans',sans-serif;">Fill in the details below to add a new property to your portfolio.</p>
+      </div>
+      <button onclick="closeAddPropertyModal()" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(27,67,50,0.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--slate);flex-shrink:0;margin-left:16px;" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <form id="add-property-form" onsubmit="submitAddProperty(event)" novalidate>
+
+      <!-- Section 1: Property Details -->
+      <div style="margin:24px 0 0;">
+        <div class="form-section-label">Property Details</div>
+        <div style="display:grid;gap:20px;">
+          <div>
+            <label class="form-label" for="ap-address">Street Address</label>
+            <input class="form-input" id="ap-address" type="text" placeholder="e.g. 142 Maple Street" style="border-radius:8px;border:1px solid #D1CFC9;" />
+            <div class="field-error-msg" id="ap-address-err"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <label class="form-label" for="ap-city">City</label>
+              <input class="form-input" id="ap-city" type="text" placeholder="e.g. Austin" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-city-err"></div>
+            </div>
+            <div>
+              <label class="form-label" for="ap-state">State</label>
+              <input class="form-input" id="ap-state" type="text" placeholder="e.g. TX" maxlength="2" style="border-radius:8px;border:1px solid #D1CFC9;text-transform:uppercase;" />
+              <div class="field-error-msg" id="ap-state-err"></div>
+            </div>
+          </div>
+          <div>
+            <label class="form-label" for="ap-zip">Zip Code</label>
+            <input class="form-input" id="ap-zip" type="text" placeholder="e.g. 78701" maxlength="5" style="border-radius:8px;border:1px solid #D1CFC9;" />
+            <div class="field-error-msg" id="ap-zip-err"></div>
+          </div>
+          <!-- Zillow Lookup Button -->
+          <div id="ap-lookup-section">
+            <button type="button" id="ap-lookup-btn" onclick="lookupPropertyData()" style="width:100%;padding:12px 16px;background:linear-gradient(135deg,rgba(183,228,199,0.25),rgba(64,145,108,0.15));border:1px dashed var(--sage);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--forest);transition:background 0.2s ease,border-color 0.2s ease;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span id="ap-lookup-btn-text">Auto-fill from Address</span>
+            </button>
+            <div id="ap-lookup-status" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:center;"></div>
+          </div>
+          <!-- Property Photo with Upload/URL toggle -->
+          <div>
+            <label class="form-label" for="ap-photo">Property Photo <span style="font-weight:400;color:rgba(26,36,32,0.4);font-size:12px;">(optional)</span></label>
+            <div id="ap-photo-tabs" style="display:flex;gap:8px;margin-bottom:10px;">
+              <button type="button" class="photo-tab active" id="ap-photo-upload-tab" onclick="setPhotoMode('upload')">Upload</button>
+              <button type="button" class="photo-tab" id="ap-photo-url-tab" onclick="setPhotoMode('url')">From URL</button>
+            </div>
+            <div id="ap-photo-upload-mode">
+              <input class="form-input" id="ap-photo" type="file" accept="image/*" onchange="previewPropertyPhoto(this)" style="border-radius:8px;border:1px solid #D1CFC9;padding:10px 14px;cursor:pointer;" />
+            </div>
+            <div id="ap-photo-url-mode" style="display:none;">
+              <input class="form-input" id="ap-photo-url" type="url" placeholder="https://..." oninput="clearAutoFillIndicator('ap-photo-url')" onchange="previewPropertyPhotoUrl(this.value)" style="border-radius:8px;border:1px solid #D1CFC9;" />
+            </div>
+            <div id="ap-photo-preview" style="display:none;margin-top:10px;position:relative;">
+              <img id="ap-photo-img" src="" alt="Preview" style="width:100%;height:140px;object-fit:cover;border-radius:8px;border:1px solid rgba(183,228,199,0.6);" />
+              <button type="button" onclick="clearPhotoPreview()" style="position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <div id="ap-photo-autofill-badge" style="display:none;position:absolute;bottom:8px;left:8px;background:var(--gold);color:var(--slate);font-size:11px;font-weight:600;padding:4px 8px;border-radius:4px;font-family:'DM Sans',sans-serif;">Auto-filled</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Property Details & Financials -->
+      <div style="margin:28px 0 0;">
+        <div class="form-section-label">Property Details & Financials</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+          <div>
+            <label class="form-label" for="ap-sqft">Square Feet</label>
+            <input class="form-input" id="ap-sqft" type="text" placeholder="1,850" style="border-radius:8px;border:1px solid #D1CFC9;" oninput="clearAutoFillIndicator('ap-sqft')" onblur="formatNumberInput(this)" />
+            <div class="field-error-msg" id="ap-sqft-err"></div>
+          </div>
+          <div>
+            <label class="form-label" for="ap-value">Est. Property Value</label>
+            <div style="position:relative;">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(26,36,32,0.45);pointer-events:none;">$</span>
+              <input class="form-input" id="ap-est-value" type="text" placeholder="485,000" style="padding-left:28px;border-radius:8px;border:1px solid #D1CFC9;" oninput="clearAutoFillIndicator('ap-est-value')" onblur="formatCurrencyInput(this)" />
+            </div>
+            <div class="field-error-msg" id="ap-est-value-err"></div>
+          </div>
+          <div>
+            <label class="form-label" for="ap-rent">Monthly Rent</label>
+            <div style="position:relative;">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(26,36,32,0.45);pointer-events:none;">$</span>
+              <input class="form-input" id="ap-rent" type="text" placeholder="2,200" style="padding-left:28px;border-radius:8px;border:1px solid #D1CFC9;" oninput="clearAutoFillIndicator('ap-rent')" onblur="formatCurrencyInput(this)" />
+            </div>
+            <div class="field-error-msg" id="ap-rent-err"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Tenant Assignment -->
+      <div style="margin:28px 0 0;">
+        <div class="form-section-label">Tenant Assignment</div>
+        <div style="display:grid;gap:20px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <label class="form-label" for="ap-tenant-name">Tenant Name</label>
+              <input class="form-input" id="ap-tenant-name" type="text" placeholder="Full name" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-tenant-name-err"></div>
+            </div>
+            <div>
+              <label class="form-label" for="ap-tenant-email">Tenant Email</label>
+              <input class="form-input" id="ap-tenant-email" type="email" placeholder="tenant@email.com" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-tenant-email-err"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <label class="form-label" for="ap-lease-start">Lease Start Date</label>
+              <input class="form-input" id="ap-lease-start" type="date" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-lease-start-err"></div>
+            </div>
+            <div>
+              <label class="form-label" for="ap-lease-end">Lease End Date</label>
+              <input class="form-input" id="ap-lease-end" type="date" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-lease-end-err"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:20px;border-top:1px solid rgba(183,228,199,0.4);">
+        <button type="button" style="background:none;border:none;font-family:'DM Sans',sans-serif;font-size:15px;color:rgba(26,36,32,0.5);cursor:pointer;padding:10px 4px;font-weight:500;transition:opacity 0.15s ease;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" onclick="closeAddPropertyModal()">Cancel</button>
+        <button type="submit" class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          Save Property
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
      SUCCESS TOAST
 ════════════════════════════════════════════ -->
 <div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--forest);color:var(--offwhite);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:14px 20px;border-radius:12px;box-shadow:0 4px 24px rgba(27,67,50,0.30);opacity:0;transform:translateY(8px);transition:opacity 0.25s ease,transform 0.25s cubic-bezier(0.16,1,0.3,1);pointer-events:none;display:flex;align-items:center;gap:10px;z-index:100;">
@@ -1184,6 +1471,223 @@
 </div>
 
 <script>
+// ═══════════════════════════════
+// PROPERTY DATA SERVICE (Zillow Mock)
+// ═══════════════════════════════
+const PropertyDataService = {
+  _provider: 'mock', // Change to 'zillow' when API is available
+
+  async lookup(address, city, state, zip) {
+    switch (this._provider) {
+      case 'mock': return this._mockLookup(address, city, state, zip);
+      case 'zillow': return this._zillowLookup(address, city, state, zip);
+      default: return this._mockLookup(address, city, state, zip);
+    }
+  },
+
+  setProvider(provider) { this._provider = provider; },
+
+  async _mockLookup(address, city, state, zip) {
+    // Simulate network delay
+    await new Promise(r => setTimeout(r, 600 + Math.random() * 800));
+
+    const hash = this._hashString(address + city + state + zip);
+    const stateMultipliers = {
+      'CA': 1.8, 'NY': 1.7, 'TX': 1.0, 'FL': 1.1, 'CO': 1.3,
+      'WA': 1.4, 'MA': 1.5, 'IL': 1.0, 'TN': 0.9, 'NC': 0.95
+    };
+    const mult = stateMultipliers[state.toUpperCase()] || 1.0;
+
+    const sqft = 1200 + (hash % 2000);
+    const pricePerSqft = 150 + (hash % 350);
+    const estimatedValue = Math.round(sqft * pricePerSqft * mult);
+    const estimatedRent = Math.round(estimatedValue * 0.005);
+
+    const addrSlug = encodeURIComponent(address.split(' ').slice(0, 2).join('+'));
+    const photoUrl = `https://placehold.co/800x500/2D6A4F/B7E4C7?text=${addrSlug}`;
+
+    return { estimatedValue, estimatedRent, squareFeet: sqft, photoUrl, source: 'mock' };
+  },
+
+  async _zillowLookup(address, city, state, zip) {
+    // TODO: Implement real Zillow API when available
+    // const response = await fetch(`https://api.example.com/zillow?address=${encodeURIComponent(address)}&zip=${zip}`);
+    // const data = await response.json();
+    // return { estimatedValue: data.zestimate, estimatedRent: data.rentZestimate, squareFeet: data.livingArea, photoUrl: data.photo };
+    throw new Error('Zillow API not configured. Use mock provider.');
+  },
+
+  _hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+};
+
+// ═══════════════════════════════
+// ZILLOW LOOKUP UI
+// ═══════════════════════════════
+let autoFilledFields = new Set();
+let currentPhotoMode = 'upload';
+
+async function lookupPropertyData() {
+  const address = document.getElementById('ap-address').value.trim();
+  const city = document.getElementById('ap-city').value.trim();
+  const state = document.getElementById('ap-state').value.trim().toUpperCase();
+  const zip = document.getElementById('ap-zip').value.trim();
+
+  if (!address) { showLookupStatus('Enter a street address first.', 'error'); return; }
+  if (!/^\d{5}$/.test(zip)) { showLookupStatus('Enter a valid 5-digit zip code.', 'error'); return; }
+
+  setLookupLoading(true);
+
+  try {
+    const data = await PropertyDataService.lookup(address, city, state, zip);
+    if (!data) { showLookupStatus('No property data found.', 'warning'); return; }
+    populatePropertyData(data);
+    showLookupStatus('Property data found! You can edit any values.', 'success');
+  } catch (err) {
+    console.error('Lookup failed:', err);
+    showLookupStatus('Lookup failed. Enter values manually.', 'error');
+  } finally {
+    setLookupLoading(false);
+  }
+}
+
+function populatePropertyData(data) {
+  autoFilledFields.clear();
+
+  if (data.squareFeet) {
+    setFieldValue('ap-sqft', data.squareFeet.toLocaleString('en-US'));
+    markAsAutoFilled('ap-sqft');
+  }
+  if (data.estimatedValue) {
+    setFieldValue('ap-est-value', data.estimatedValue.toLocaleString('en-US'));
+    markAsAutoFilled('ap-est-value');
+  }
+  if (data.estimatedRent) {
+    setFieldValue('ap-rent', data.estimatedRent.toLocaleString('en-US'));
+    markAsAutoFilled('ap-rent');
+  }
+  if (data.photoUrl) {
+    setPhotoMode('url');
+    document.getElementById('ap-photo-url').value = data.photoUrl;
+    previewPropertyPhotoUrl(data.photoUrl);
+    markAsAutoFilled('ap-photo-url');
+    document.getElementById('ap-photo-autofill-badge').style.display = 'block';
+  }
+}
+
+function setFieldValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.value = value;
+    el.classList.remove('field-invalid');
+    const err = document.getElementById(id + '-err');
+    if (err) { err.textContent = ''; err.style.display = 'none'; }
+  }
+}
+
+function markAsAutoFilled(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('field-autofilled'); autoFilledFields.add(id); }
+}
+
+function clearAutoFillIndicator(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.remove('field-autofilled'); autoFilledFields.delete(id); }
+}
+
+function setLookupLoading(isLoading) {
+  const btn = document.getElementById('ap-lookup-btn');
+  const txt = document.getElementById('ap-lookup-btn-text');
+  if (isLoading) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'wait';
+    txt.innerHTML = '<span class="lookup-spinner"></span> Looking up...';
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+    txt.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Auto-fill from Address';
+  }
+}
+
+function showLookupStatus(msg, type) {
+  const el = document.getElementById('ap-lookup-status');
+  const colors = {
+    success: { bg: 'rgba(183,228,199,0.4)', color: 'var(--forest)' },
+    error: { bg: 'rgba(217,83,79,0.12)', color: '#D9534F' },
+    warning: { bg: 'rgba(212,168,83,0.25)', color: '#8B6914' }
+  };
+  const s = colors[type] || colors.success;
+  el.style.display = 'block';
+  el.style.background = s.bg;
+  el.style.color = s.color;
+  el.textContent = msg;
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+function setPhotoMode(mode) {
+  currentPhotoMode = mode;
+  const uploadTab = document.getElementById('ap-photo-upload-tab');
+  const urlTab = document.getElementById('ap-photo-url-tab');
+  const uploadMode = document.getElementById('ap-photo-upload-mode');
+  const urlMode = document.getElementById('ap-photo-url-mode');
+
+  if (mode === 'upload') {
+    uploadTab.classList.add('active');
+    urlTab.classList.remove('active');
+    uploadMode.style.display = 'block';
+    urlMode.style.display = 'none';
+  } else {
+    urlTab.classList.add('active');
+    uploadTab.classList.remove('active');
+    uploadMode.style.display = 'none';
+    urlMode.style.display = 'block';
+  }
+}
+
+function previewPropertyPhotoUrl(url) {
+  if (!url) return;
+  const img = document.getElementById('ap-photo-img');
+  const preview = document.getElementById('ap-photo-preview');
+  img.onload = () => { preview.style.display = 'block'; };
+  img.onerror = () => { preview.style.display = 'none'; showLookupStatus('Could not load image.', 'warning'); };
+  img.src = url;
+}
+
+function clearPhotoPreview() {
+  document.getElementById('ap-photo-preview').style.display = 'none';
+  document.getElementById('ap-photo-img').src = '';
+  document.getElementById('ap-photo').value = '';
+  document.getElementById('ap-photo-url').value = '';
+  document.getElementById('ap-photo-autofill-badge').style.display = 'none';
+  clearAutoFillIndicator('ap-photo-url');
+}
+
+function getPhotoSource() {
+  const fileInput = document.getElementById('ap-photo');
+  const urlInput = document.getElementById('ap-photo-url');
+  if (currentPhotoMode === 'upload' && fileInput.files && fileInput.files[0]) {
+    return { type: 'file', value: document.getElementById('ap-photo-img').src };
+  } else if (currentPhotoMode === 'url' && urlInput.value.trim()) {
+    return { type: 'url', value: urlInput.value.trim() };
+  }
+  return { type: 'none', value: null };
+}
+
+function formatNumberInput(input) {
+  const raw = input.value.replace(/[^0-9]/g, '');
+  if (!raw) return;
+  const num = parseInt(raw, 10);
+  if (!isNaN(num)) input.value = num.toLocaleString('en-US');
+}
+
 // ═══════════════════════════════
 // PROPERTY DATA
 // ═══════════════════════════════
@@ -1224,6 +1728,7 @@ const threads = [
   {
     name: 'Sarah Mitchell',
     initials: 'SM',
+    email: 'sarah.mitchell@email.com',
     property: '142 Maple Street, Austin TX',
     avatarGrad: 'linear-gradient(135deg,#B7E4C7,#40916C)',
     avatarColor: '#1B4332',
@@ -1236,6 +1741,7 @@ const threads = [
   {
     name: 'James Okafor',
     initials: 'JO',
+    email: 'james.okafor@email.com',
     property: '78 Birchwood Ave, Denver CO',
     avatarGrad: 'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))',
     avatarColor: '#8B6914',
@@ -1248,6 +1754,7 @@ const threads = [
   {
     name: 'Priya Nair',
     initials: 'PN',
+    email: 'priya.nair@email.com',
     property: '331 Lakeview Drive, Nashville TN',
     avatarGrad: 'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))',
     avatarColor: '#1B4332',
@@ -1269,8 +1776,8 @@ function showView(name) {
   document.getElementById('view-' + name).classList.add('active');
   window.scrollTo(0, 0);
   if (name === 'landlord') {
-    renderPropertyCards('#ls-dashboard > div:last-child', true);
-    renderPropertyCards('#ls-properties > div:last-child', false);
+    renderPropertyCards('#dashboard-cards-grid', true);
+    renderPropertyCards('#properties-cards-grid', false);
     renderThread(activeThread);
   }
 }
@@ -1430,12 +1937,123 @@ function submitMaintenance(e) {
 }
 
 // ═══════════════════════════════
+// EMAIL TENANT MODAL
+// ═══════════════════════════════
+let currentEmailTenantIndex = 0;
+
+function openEmailModal(tenantIndex) {
+  currentEmailTenantIndex = tenantIndex;
+  const tenant = threads[tenantIndex];
+
+  // Populate recipient info
+  document.getElementById('email-recipient-avatar').style.background = tenant.avatarGrad;
+  document.getElementById('email-recipient-avatar').style.color = tenant.avatarColor;
+  document.getElementById('email-recipient-avatar').textContent = tenant.initials;
+  document.getElementById('email-recipient-name').textContent = tenant.name;
+  document.getElementById('email-recipient-email').textContent = tenant.email;
+  document.getElementById('email-recipient-property').textContent = tenant.property;
+
+  // Clear form
+  document.getElementById('email-subject').value = '';
+  document.getElementById('email-message').value = '';
+  document.getElementById('email-sending-status').style.display = 'none';
+  const sendBtn = document.getElementById('email-send-btn');
+  sendBtn.disabled = false;
+  sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> Send Email';
+
+  // Open modal
+  document.getElementById('email-modal').classList.add('open');
+}
+
+function closeEmailModal(e) {
+  if (!e || e.target === document.getElementById('email-modal')) {
+    document.getElementById('email-modal').classList.remove('open');
+  }
+}
+
+async function sendTenantEmail(e) {
+  e.preventDefault();
+
+  const tenant = threads[currentEmailTenantIndex];
+  const subject = document.getElementById('email-subject').value.trim();
+  const message = document.getElementById('email-message').value.trim();
+  const statusEl = document.getElementById('email-sending-status');
+  const sendBtn = document.getElementById('email-send-btn');
+
+  // Show sending state
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg> Sending...</span>';
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'rgba(212,168,83,0.15)';
+  statusEl.style.color = '#8B6914';
+  statusEl.textContent = 'Sending email to ' + tenant.name + '...';
+
+  try {
+    // Call backend API
+    const response = await fetch('http://localhost:3001/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        to: tenant.email,
+        subject: subject,
+        message: message,
+        from_name: 'Dwello Property Management',
+        tenant_name: tenant.name,
+        property: tenant.property
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      // Success state
+      statusEl.style.background = 'rgba(183,228,199,0.3)';
+      statusEl.style.color = 'var(--forest)';
+      statusEl.textContent = '✓ Email sent to ' + tenant.name;
+
+      // Reset button
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> Send Email';
+
+      // Close modal and show toast
+      setTimeout(() => {
+        closeEmailModal();
+        showToast('Email sent to ' + tenant.name);
+      }, 1500);
+
+    } else {
+      throw new Error(result.error || 'Failed to send email');
+    }
+
+  } catch (error) {
+    console.error('Email error:', error);
+
+    // Error state
+    statusEl.style.background = 'rgba(220,53,69,0.1)';
+    statusEl.style.color = '#dc3545';
+    statusEl.textContent = '✗ ' + error.message;
+
+    // Reset button
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> Send Email';
+  }
+}
+
+// Add spin animation for loading state
+const styleSheet = document.createElement('style');
+styleSheet.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+document.head.appendChild(styleSheet);
+
+// ═══════════════════════════════
 // TOAST
 // ═══════════════════════════════
 let toastTimeout;
-function showToast(msg) {
+function showToast(msg, bg) {
   const t = document.getElementById('toast');
   document.getElementById('toast-msg').textContent = msg;
+  t.style.background = bg || 'var(--forest)';
   t.style.opacity = '1';
   t.style.transform = 'translateY(0)';
   clearTimeout(toastTimeout);
@@ -1451,15 +2069,217 @@ function showToast(msg) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     document.getElementById('maintenance-modal').classList.remove('open');
+    document.getElementById('email-modal').classList.remove('open');
+    closeAddPropertyModal();
   }
 });
+
+// ═══════════════════════════════
+// ADD PROPERTY MODAL
+// ═══════════════════════════════
+function openAddPropertyModal() {
+  document.getElementById('add-property-modal').classList.add('open');
+}
+
+function closeAddPropertyModal(e) {
+  if (e && e.target !== document.getElementById('add-property-modal')) return;
+  document.getElementById('add-property-modal').classList.remove('open');
+  document.getElementById('add-property-form').reset();
+  document.getElementById('ap-photo-preview').style.display = 'none';
+  document.getElementById('ap-lookup-status').style.display = 'none';
+  document.getElementById('ap-photo-autofill-badge').style.display = 'none';
+  clearAddPropertyErrors();
+
+  // Reset auto-fill state
+  autoFilledFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('field-autofilled');
+  });
+  autoFilledFields.clear();
+
+  // Reset photo mode to upload
+  setPhotoMode('upload');
+}
+
+const AP_FIELDS = ['ap-address','ap-city','ap-state','ap-zip','ap-sqft','ap-est-value','ap-rent','ap-tenant-name','ap-tenant-email','ap-lease-start','ap-lease-end'];
+
+function clearAddPropertyErrors() {
+  AP_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    const err = document.getElementById(id + '-err');
+    if (el) el.classList.remove('field-invalid');
+    if (err) { err.textContent = ''; err.style.display = 'none'; }
+  });
+}
+
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  const err = document.getElementById(id + '-err');
+  if (el) el.classList.add('field-invalid');
+  if (err) { err.textContent = msg; err.style.display = 'block'; }
+}
+
+function formatCurrencyInput(input) {
+  const raw = input.value.replace(/[^0-9.]/g, '');
+  if (!raw) return;
+  const num = parseFloat(raw);
+  if (!isNaN(num)) {
+    input.value = num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+}
+
+function previewPropertyPhoto(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('ap-photo-img').src = e.target.result;
+      document.getElementById('ap-photo-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function submitAddProperty(e) {
+  e.preventDefault();
+  clearAddPropertyErrors();
+
+  const address     = document.getElementById('ap-address').value.trim();
+  const city        = document.getElementById('ap-city').value.trim();
+  const state       = document.getElementById('ap-state').value.trim().toUpperCase();
+  const zip         = document.getElementById('ap-zip').value.trim();
+  const sqftRaw     = document.getElementById('ap-sqft').value.trim();
+  const valueRaw    = document.getElementById('ap-est-value').value.trim();
+  const rentRaw     = document.getElementById('ap-rent').value.trim();
+  const tenantName  = document.getElementById('ap-tenant-name').value.trim();
+  const tenantEmail = document.getElementById('ap-tenant-email').value.trim();
+  const leaseStart  = document.getElementById('ap-lease-start').value;
+  const leaseEnd    = document.getElementById('ap-lease-end').value;
+
+  let valid = true;
+
+  if (!address)                                       { showFieldError('ap-address', 'Street address is required.'); valid = false; }
+  if (!city)                                          { showFieldError('ap-city', 'City is required.'); valid = false; }
+  if (!state)                                         { showFieldError('ap-state', 'State is required.'); valid = false; }
+  if (!/^\d{5}$/.test(zip))                          { showFieldError('ap-zip', 'Zip code must be exactly 5 digits.'); valid = false; }
+
+  // Square feet is optional, but if provided must be valid
+  const sqftNum = sqftRaw ? parseFloat(sqftRaw.replace(/,/g, '')) : null;
+  if (sqftRaw && (isNaN(sqftNum) || sqftNum <= 0))   { showFieldError('ap-sqft', 'Enter a valid square footage.'); valid = false; }
+
+  const valueNum = parseFloat(valueRaw.replace(/,/g, ''));
+  if (!valueRaw || isNaN(valueNum) || valueNum <= 0) { showFieldError('ap-est-value', 'Enter a valid property value.'); valid = false; }
+
+  const rentNum = parseFloat(rentRaw.replace(/,/g, ''));
+  if (!rentRaw || isNaN(rentNum) || rentNum <= 0)    { showFieldError('ap-rent', 'Enter a valid monthly rent.'); valid = false; }
+
+  if (!tenantName)                                    { showFieldError('ap-tenant-name', 'Tenant name is required.'); valid = false; }
+  if (!tenantEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tenantEmail)) { showFieldError('ap-tenant-email', 'Enter a valid email address.'); valid = false; }
+  if (!leaseStart)                                    { showFieldError('ap-lease-start', 'Lease start date is required.'); valid = false; }
+  if (!leaseEnd)                                      { showFieldError('ap-lease-end', 'Lease end date is required.'); valid = false; }
+  if (leaseStart && leaseEnd && leaseEnd <= leaseStart) { showFieldError('ap-lease-end', 'Lease end must be after lease start.'); valid = false; }
+
+  if (!valid) return;
+
+  // Build photo src - handle both upload and URL modes
+  const photoSource = getPhotoSource();
+  const slug = encodeURIComponent(address.split(' ').slice(0, 3).join('+'));
+  let photoSrc;
+  if (photoSource.type === 'file' || photoSource.type === 'url') {
+    photoSrc = photoSource.value;
+  } else {
+    photoSrc = `https://placehold.co/400x200/2D6A4F/B7E4C7?text=${slug}`;
+  }
+
+  const initials         = tenantName.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const formattedValue   = '$' + valueNum.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  const formattedRent    = '$' + rentNum.toLocaleString('en-US', { maximumFractionDigits: 0 }) + '/mo';
+
+  // Add to properties array
+  properties.push({
+    address,
+    city: city + ', ' + state,
+    tenant: tenantName,
+    initials,
+    value: formattedValue,
+    rent: formattedRent,
+    sqft: sqftNum ? sqftNum.toLocaleString('en-US') + ' sq ft' : null,
+    img: photoSrc,
+    avatarGrad: 'linear-gradient(135deg,var(--mint),var(--sage))',
+    avatarColor: '#1B4332',
+  });
+
+  // Add tenant to threads array so Contact button works
+  const gradients = [
+    'linear-gradient(135deg,#B7E4C7,#40916C)',
+    'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))',
+    'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))',
+    'linear-gradient(135deg,var(--mint),var(--sage))'
+  ];
+  const colors = ['#1B4332', '#8B6914', '#1B4332', '#1B4332'];
+  const gradIndex = threads.length % gradients.length;
+
+  threads.push({
+    name: tenantName,
+    initials: initials,
+    email: tenantEmail,
+    property: address + ', ' + city + ' ' + state,
+    avatarGrad: gradients[gradIndex],
+    avatarColor: colors[gradIndex],
+    messages: []
+  });
+
+  const newThreadIndex = threads.length - 1;
+
+  // Re-render property cards
+  renderPropertyCards('#dashboard-cards-grid', true);
+  renderPropertyCards('#properties-cards-grid', false);
+
+  // Add tenant row to directory
+  const tbody = document.getElementById('tenant-table-body');
+  if (tbody) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--sage));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--forest);">${initials}</div>
+          <span style="font-weight:500;">${tenantName}</span>
+        </div>
+      </td>
+      <td style="color:rgba(26,36,32,0.65);">${address}, ${city} ${state}</td>
+      <td><span class="chip chip-mint">${formatDate(leaseStart)}</span></td>
+      <td><span class="chip chip-gold">${formatDate(leaseEnd)}</span></td>
+      <td><button class="btn-primary btn-sm" onclick="openEmailModal(${newThreadIndex})">Contact</button></td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  // Update stat counts
+  const propStat = document.getElementById('stat-properties');
+  const tenStat  = document.getElementById('stat-tenants');
+  if (propStat) propStat.textContent = properties.length;
+  if (tenStat)  tenStat.textContent  = properties.length;
+
+  // Close and reset modal
+  document.getElementById('add-property-modal').classList.remove('open');
+  document.getElementById('add-property-form').reset();
+  document.getElementById('ap-photo-preview').style.display = 'none';
+
+  // Success toast
+  showToast('Property added successfully.', '#40916C');
+}
 
 // ═══════════════════════════════
 // INIT
 // ═══════════════════════════════
 // Render landlord cards on load
-renderPropertyCards('#ls-dashboard > div:last-child', true);
-renderPropertyCards('#ls-properties > div:last-child', false);
+renderPropertyCards('#dashboard-cards-grid', true);
+renderPropertyCards('#properties-cards-grid', false);
 renderThread(0);
 </script>
 </body>
