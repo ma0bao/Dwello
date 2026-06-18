@@ -1,0 +1,968 @@
+// ═══════════════════════════════
+// PROPERTY DATA SERVICE (Zillow Mock)
+// ═══════════════════════════════
+const PropertyDataService = {
+  _provider: 'mock',
+
+  async lookup(address, city, state, zip) {
+    switch (this._provider) {
+      case 'mock': return this._mockLookup(address, city, state, zip);
+      case 'zillow': return this._zillowLookup(address, city, state, zip);
+      default: return this._mockLookup(address, city, state, zip);
+    }
+  },
+
+  setProvider(provider) { this._provider = provider; },
+
+  async _mockLookup(address, city, state, zip) {
+    await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 800));
+
+    const hash = this._hashString(address + city + state + zip);
+    const stateMultipliers = {
+      CA: 1.8, NY: 1.7, TX: 1.0, FL: 1.1, CO: 1.3,
+      WA: 1.4, MA: 1.5, IL: 1.0, TN: 0.9, NC: 0.95
+    };
+    const mult = stateMultipliers[state.toUpperCase()] || 1.0;
+    const sqft = 1200 + (hash % 2000);
+    const pricePerSqft = 150 + (hash % 350);
+    const estimatedValue = Math.round(sqft * pricePerSqft * mult);
+    const estimatedRent = Math.round(estimatedValue * 0.005);
+    const addrSlug = encodeURIComponent(address.split(' ').slice(0, 2).join('+'));
+    const photoUrl = `https://placehold.co/800x500/2D6A4F/B7E4C7?text=${addrSlug}`;
+
+    return { estimatedValue, estimatedRent, squareFeet: sqft, photoUrl, source: 'mock' };
+  },
+
+  async _zillowLookup() {
+    throw new Error('Zillow API not configured. Use mock provider.');
+  },
+
+  _hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+};
+
+let autoFilledFields = new Set();
+let currentPhotoMode = 'upload';
+
+async function lookupPropertyData() {
+  const address = document.getElementById('ap-address').value.trim();
+  const city = document.getElementById('ap-city').value.trim();
+  const state = document.getElementById('ap-state').value.trim().toUpperCase();
+  const zip = document.getElementById('ap-zip').value.trim();
+
+  if (!address) { showLookupStatus('Enter a street address first.', 'error'); return; }
+  if (!/^\d{5}$/.test(zip)) { showLookupStatus('Enter a valid 5-digit zip code.', 'error'); return; }
+
+  setLookupLoading(true);
+
+  try {
+    const data = await PropertyDataService.lookup(address, city, state, zip);
+    if (!data) { showLookupStatus('No property data found.', 'warning'); return; }
+    populatePropertyData(data);
+    showLookupStatus('Property data found! You can edit any values.', 'success');
+  } catch (error) {
+    console.error('Lookup failed:', error);
+    showLookupStatus('Lookup failed. Enter values manually.', 'error');
+  } finally {
+    setLookupLoading(false);
+  }
+}
+
+function populatePropertyData(data) {
+  autoFilledFields.clear();
+
+  if (data.squareFeet) {
+    setFieldValue('ap-sqft', data.squareFeet.toLocaleString('en-US'));
+    markAsAutoFilled('ap-sqft');
+  }
+  if (data.estimatedValue) {
+    setFieldValue('ap-est-value', data.estimatedValue.toLocaleString('en-US'));
+    markAsAutoFilled('ap-est-value');
+  }
+  if (data.estimatedRent) {
+    setFieldValue('ap-rent', data.estimatedRent.toLocaleString('en-US'));
+    markAsAutoFilled('ap-rent');
+  }
+  if (data.photoUrl) {
+    setPhotoMode('url');
+    document.getElementById('ap-photo-url').value = data.photoUrl;
+    previewPropertyPhotoUrl(data.photoUrl);
+    markAsAutoFilled('ap-photo-url');
+    document.getElementById('ap-photo-autofill-badge').style.display = 'block';
+  }
+}
+
+function setFieldValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.value = value;
+    el.classList.remove('field-invalid');
+    const err = document.getElementById(id + '-err');
+    if (err) { err.textContent = ''; err.style.display = 'none'; }
+  }
+}
+
+function markAsAutoFilled(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('field-autofilled'); autoFilledFields.add(id); }
+}
+
+function clearAutoFillIndicator(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.remove('field-autofilled'); autoFilledFields.delete(id); }
+}
+
+function setLookupLoading(isLoading) {
+  const btn = document.getElementById('ap-lookup-btn');
+  const txt = document.getElementById('ap-lookup-btn-text');
+  if (!btn || !txt) return;
+
+  if (isLoading) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'wait';
+    txt.innerHTML = '<span class="lookup-spinner"></span> Looking up...';
+  } else {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+    txt.textContent = 'Auto-fill from Address';
+  }
+}
+
+function showLookupStatus(msg, type) {
+  const el = document.getElementById('ap-lookup-status');
+  if (!el) return;
+  const colors = {
+    success: { bg: 'rgba(183,228,199,0.4)', color: 'var(--forest)' },
+    error: { bg: 'rgba(217,83,79,0.12)', color: '#D9534F' },
+    warning: { bg: 'rgba(212,168,83,0.25)', color: '#8B6914' }
+  };
+  const styles = colors[type] || colors.success;
+  el.style.display = 'block';
+  el.style.background = styles.bg;
+  el.style.color = styles.color;
+  el.textContent = msg;
+  if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+function setPhotoMode(mode) {
+  currentPhotoMode = mode;
+  const uploadTab = document.getElementById('ap-photo-upload-tab');
+  const urlTab = document.getElementById('ap-photo-url-tab');
+  const uploadMode = document.getElementById('ap-photo-upload-mode');
+  const urlMode = document.getElementById('ap-photo-url-mode');
+  if (!uploadTab || !urlTab || !uploadMode || !urlMode) return;
+
+  if (mode === 'upload') {
+    uploadTab.classList.add('active');
+    urlTab.classList.remove('active');
+    uploadMode.style.display = 'block';
+    urlMode.style.display = 'none';
+  } else {
+    urlTab.classList.add('active');
+    uploadTab.classList.remove('active');
+    uploadMode.style.display = 'none';
+    urlMode.style.display = 'block';
+  }
+}
+
+function previewPropertyPhotoUrl(url) {
+  if (!url) return;
+  const img = document.getElementById('ap-photo-img');
+  const preview = document.getElementById('ap-photo-preview');
+  if (!img || !preview) return;
+  img.onload = () => { preview.style.display = 'block'; };
+  img.onerror = () => { preview.style.display = 'none'; showLookupStatus('Could not load image.', 'warning'); };
+  img.src = url;
+}
+
+function clearPhotoPreview() {
+  document.getElementById('ap-photo-preview').style.display = 'none';
+  document.getElementById('ap-photo-img').src = '';
+  document.getElementById('ap-photo').value = '';
+  document.getElementById('ap-photo-url').value = '';
+  document.getElementById('ap-photo-autofill-badge').style.display = 'none';
+  clearAutoFillIndicator('ap-photo-url');
+}
+
+function getPhotoSource() {
+  const fileInput = document.getElementById('ap-photo');
+  const urlInput = document.getElementById('ap-photo-url');
+  if (currentPhotoMode === 'upload' && fileInput.files && fileInput.files[0]) {
+    return { type: 'file', value: document.getElementById('ap-photo-img').src };
+  }
+  if (currentPhotoMode === 'url' && urlInput.value.trim()) {
+    return { type: 'url', value: urlInput.value.trim() };
+  }
+  return { type: 'none', value: null };
+}
+
+function formatNumberInput(input) {
+  const raw = input.value.replace(/[^0-9]/g, '');
+  if (!raw) return;
+  const num = parseInt(raw, 10);
+  if (!Number.isNaN(num)) input.value = num.toLocaleString('en-US');
+}
+
+// ═══════════════════════════════
+// PROPERTY DATA
+// ═══════════════════════════════
+const properties = [];
+
+const propertyAvatarStyles = [
+  { avatarGrad: 'linear-gradient(135deg,#B7E4C7,#40916C)', avatarColor: '#1B4332' },
+  { avatarGrad: 'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))', avatarColor: '#8B6914' },
+  { avatarGrad: 'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))', avatarColor: '#1B4332' },
+  { avatarGrad: 'linear-gradient(135deg,var(--mint),var(--sage))', avatarColor: '#1B4332' }
+];
+
+function initialsFromName(name) {
+  return String(name || '?')
+    .split(' ')
+    .filter(Boolean)
+    .map(word => word[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || '?';
+}
+
+function formatCurrency(value) {
+  const number = Number(value || 0);
+  return '$' + number.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+function mapApiPropertyToCard(property, index) {
+  const avatar = propertyAvatarStyles[index % propertyAvatarStyles.length];
+  const tenant = property.tenantName || 'Unassigned';
+  return {
+    id: property.id,
+    address: property.address,
+    city: property.city + ', ' + property.state,
+    cityName: property.city,
+    state: property.state,
+    zip: property.zip,
+    tenantName: property.tenantName,
+    tenantEmail: property.tenantEmail,
+    rentAmount: property.rent,
+    estimatedValue: property.estimatedValue,
+    squareFeet: property.squareFeet,
+    photoUrl: property.photoUrl,
+    tenant,
+    initials: initialsFromName(tenant),
+    value: formatCurrency(property.estimatedValue),
+    rent: formatCurrency(property.rent) + '/mo',
+    sqft: property.squareFeet ? property.squareFeet.toLocaleString('en-US') + ' sq ft' : null,
+    img: property.photoUrl || `https://placehold.co/400x200/2D6A4F/B7E4C7?text=${encodeURIComponent(property.address)}`,
+    avatarGrad: avatar.avatarGrad,
+    avatarColor: avatar.avatarColor
+  };
+}
+
+async function loadPropertiesFromApi() {
+  try {
+    const response = await fetch('/api/properties');
+    if (!response.ok) throw new Error('Could not load properties');
+    const apiProperties = await response.json();
+    properties.splice(0, properties.length, ...apiProperties.map(mapApiPropertyToCard));
+    renderPropertyCards('#dashboard-cards-grid', true);
+    renderPropertyCards('#properties-cards-grid', false);
+    updatePortfolioStats();
+  } catch (error) {
+    console.error('Property load failed:', error);
+    showToast('Could not load saved properties.', '#D9534F');
+  }
+}
+
+function updatePortfolioStats() {
+  const propStat = document.getElementById('stat-properties');
+  const tenStat  = document.getElementById('stat-tenants');
+  if (propStat) propStat.textContent = properties.length;
+  if (tenStat)  tenStat.textContent  = properties.length;
+}
+
+const threads = [
+  {
+    name: 'Sarah Mitchell',
+    initials: 'SM',
+    email: 'sarah.mitchell@email.com',
+    property: '142 Maple Street, Austin TX',
+    avatarGrad: 'linear-gradient(135deg,#B7E4C7,#40916C)',
+    avatarColor: '#1B4332',
+    messages: [
+      { sent: false, text: 'Hi Michael, just wanted to check in about the heater — it\'s making a noise.' },
+      { sent: true, text: 'Thanks for letting me know Sarah! I\'ll schedule a maintenance visit this week.' },
+      { sent: false, text: 'That would be great, thank you!' },
+    ]
+  },
+  {
+    name: 'James Okafor',
+    initials: 'JO',
+    email: 'james.okafor@email.com',
+    property: '78 Birchwood Ave, Denver CO',
+    avatarGrad: 'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))',
+    avatarColor: '#8B6914',
+    messages: [
+      { sent: false, text: 'Hi, I wanted to confirm the lease renewal timeline.' },
+      { sent: true, text: 'Hi James! I\'ll send you a renewal agreement by end of November.' },
+      { sent: false, text: 'Thanks for the quick response!' },
+    ]
+  },
+  {
+    name: 'Priya Nair',
+    initials: 'PN',
+    email: 'priya.nair@email.com',
+    property: '331 Lakeview Drive, Nashville TN',
+    avatarGrad: 'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))',
+    avatarColor: '#1B4332',
+    messages: [
+      { sent: false, text: 'Hello! The maintenance team just left — the faucet is all fixed.' },
+      { sent: true, text: 'Wonderful, so glad to hear that Priya! Let me know if anything else comes up.' },
+      { sent: false, text: 'The maintenance team was great, will do!' },
+    ]
+  }
+];
+
+let activeThread = 0;
+let editingPropertyId = null;
+
+// ═══════════════════════════════
+// VIEW SWITCHING
+// ═══════════════════════════════
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'landlord') {
+    renderPropertyCards('#dashboard-cards-grid', true);
+    renderPropertyCards('#properties-cards-grid', false);
+    renderThread(activeThread);
+  }
+}
+
+// ═══════════════════════════════
+// LANDLORD SECTION NAV
+// ═══════════════════════════════
+const landlordSections = ['dashboard', 'properties', 'tenants', 'messaging'];
+function landlordSection(name) {
+  landlordSections.forEach(s => {
+    const el = document.getElementById('ls-' + s);
+    const ln = document.getElementById('ln-' + s);
+    if (el) el.style.display = s === name ? '' : 'none';
+    if (ln) {
+      ln.classList.toggle('active-nav', s === name);
+    }
+  });
+  const titles = { dashboard: 'Dashboard', properties: 'Properties', tenants: 'Tenants', messaging: 'Messages' };
+  document.getElementById('landlord-page-title').textContent = titles[name] || '';
+}
+
+// ═══════════════════════════════
+// TENANT SECTION NAV
+// ═══════════════════════════════
+const tenantSections = ['home', 'messages', 'maintenance'];
+function tenantSection(name) {
+  tenantSections.forEach(s => {
+    const el = document.getElementById('ts-' + s);
+    const tn = document.getElementById('tn-' + s);
+    if (el) el.style.display = s === name ? '' : 'none';
+    if (tn) tn.classList.toggle('active-nav', s === name);
+  });
+  const titles = { home: 'My Home', messages: 'Messages', maintenance: 'Maintenance' };
+  document.getElementById('tenant-page-title').textContent = titles[name] || '';
+}
+
+// ═══════════════════════════════
+// PROPERTY CARDS
+// ═══════════════════════════════
+function renderPropertyCards(selector, compact) {
+  const container = document.querySelector(selector);
+  if (!container) return;
+  container.innerHTML = properties.map((p, i) => `
+    <div class="property-card">
+      <div class="property-img-wrap">
+        <img src="${p.img}" alt="${p.address}" loading="lazy" />
+        <div class="property-img-gradient"></div>
+        <div class="property-img-badge">${p.rent}</div>
+      </div>
+      <div style="padding:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+          <div>
+            <div style="font-size:16px;font-weight:600;color:var(--slate);font-family:'Playfair Display',serif;letter-spacing:-0.02em;">${p.address}</div>
+            <div style="font-size:13px;color:rgba(26,36,32,0.55);margin-top:2px;">${p.city}</div>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:var(--sage);text-align:right;font-family:'DM Sans',sans-serif;">${p.value}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+          <div style="width:28px;height:28px;border-radius:50%;background:${p.avatarGrad || 'linear-gradient(135deg,var(--mint),var(--sage))'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:${p.avatarColor || 'var(--forest)'};flex-shrink:0;">${p.initials}</div>
+          <span style="font-size:13px;color:rgba(26,36,32,0.65);">${p.tenant}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button class="btn-secondary btn-sm" style="justify-content:center;" onclick="openEditPropertyModal(${p.id})">
+            Edit
+          </button>
+          <button class="btn-primary btn-sm" style="justify-content:center;background:#B3261E;" onclick="deleteProperty(${p.id})">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+
+// ═══════════════════════════════
+// MESSAGING
+// ═══════════════════════════════
+function setActiveThread(idx) {
+  activeThread = idx;
+  const t = threads[idx];
+  // Update thread list selection
+  threads.forEach((_, i) => {
+    const el = document.getElementById('lt-' + i);
+    if (el) el.classList.toggle('selected', i === idx);
+  });
+  // Update header
+  document.getElementById('msg-avatar').style.background = t.avatarGrad;
+  document.getElementById('msg-avatar').style.color = t.avatarColor;
+  document.getElementById('msg-avatar').textContent = t.initials;
+  document.getElementById('msg-name').textContent = t.name;
+  document.getElementById('msg-property').textContent = t.property;
+  renderThread(idx);
+}
+
+function renderThread(idx) {
+  const t = threads[idx];
+  const container = document.getElementById('landlord-msg-thread');
+  if (!container) return;
+  container.innerHTML = `
+    <div style="text-align:center;margin:8px 0;">
+      <span style="font-size:12px;color:rgba(26,36,32,0.4);background:var(--offwhite);padding:4px 12px;border-radius:100px;">Today</span>
+    </div>
+    ${t.messages.map(m => `
+      <div style="display:flex;justify-content:${m.sent ? 'flex-end' : 'flex-start'};">
+        <div class="msg-bubble ${m.sent ? 'sent' : 'received'}">${m.text}</div>
+      </div>
+    `).join('')}
+  `;
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendLandlordMessage() {
+  const input = document.getElementById('landlord-compose');
+  const text = input.value.trim();
+  if (!text) return;
+  threads[activeThread].messages.push({ sent: true, text });
+  input.value = '';
+  renderThread(activeThread);
+  showToast('Message sent');
+}
+
+function sendTenantMessage() {
+  const input = document.getElementById('tenant-compose');
+  const text = input.value.trim();
+  if (!text) return;
+  const thread = document.getElementById('tenant-msg-thread');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;justify-content:flex-end;';
+  div.innerHTML = `<div class="msg-bubble sent">${text}</div>`;
+  thread.appendChild(div);
+  thread.scrollTop = thread.scrollHeight;
+  input.value = '';
+  showToast('Message sent');
+}
+
+// ═══════════════════════════════
+// MAINTENANCE MODAL
+// ═══════════════════════════════
+function openMaintenanceModal() {
+  document.getElementById('maintenance-modal').classList.add('open');
+}
+function closeMaintenanceModal(e) {
+  if (!e || e.target === document.getElementById('maintenance-modal')) {
+    document.getElementById('maintenance-modal').classList.remove('open');
+  }
+}
+function submitMaintenance(e) {
+  e.preventDefault();
+  const label = document.getElementById('maint-label').value;
+  document.getElementById('maint-label').value = '';
+  document.getElementById('maint-desc').value = '';
+  document.getElementById('maintenance-modal').classList.remove('open');
+  showToast('Maintenance request submitted');
+}
+
+// ═══════════════════════════════
+// EMAIL TENANT MODAL
+// ═══════════════════════════════
+let currentEmailTenantIndex = 0;
+
+function openEmailModal(tenantIndex) {
+  currentEmailTenantIndex = tenantIndex;
+  const tenant = threads[tenantIndex];
+
+  // Populate recipient info
+  document.getElementById('email-recipient-avatar').style.background = tenant.avatarGrad;
+  document.getElementById('email-recipient-avatar').style.color = tenant.avatarColor;
+  document.getElementById('email-recipient-avatar').textContent = tenant.initials;
+  document.getElementById('email-recipient-name').textContent = tenant.name;
+  document.getElementById('email-recipient-email').textContent = tenant.email;
+  document.getElementById('email-recipient-property').textContent = tenant.property;
+
+  // Clear form
+  document.getElementById('email-subject').value = '';
+  document.getElementById('email-message').value = '';
+  document.getElementById('email-sending-status').style.display = 'none';
+  const sendBtn = document.getElementById('email-send-btn');
+  sendBtn.disabled = false;
+  sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> Send Email';
+
+  // Open modal
+  document.getElementById('email-modal').classList.add('open');
+}
+
+function closeEmailModal(e) {
+  if (!e || e.target === document.getElementById('email-modal')) {
+    document.getElementById('email-modal').classList.remove('open');
+  }
+}
+
+async function parseApiResponse(response) {
+  const text = await response.text();
+  if (!text.trim()) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`Server returned an invalid response (${response.status}). Make sure Dwello is running with npm start.`);
+  }
+}
+
+async function sendTenantEmail(e) {
+  e.preventDefault();
+
+  const tenant = threads[currentEmailTenantIndex];
+  const subject = document.getElementById('email-subject').value.trim();
+  const message = document.getElementById('email-message').value.trim();
+  const statusEl = document.getElementById('email-sending-status');
+  const sendBtn = document.getElementById('email-send-btn');
+
+  // Show sending state
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"/></svg> Sending...</span>';
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'rgba(212,168,83,0.15)';
+  statusEl.style.color = '#8B6914';
+  statusEl.textContent = 'Sending email to ' + tenant.name + '...';
+
+  try {
+    // Call backend API
+    const response = await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        to: tenant.email,
+        subject: subject,
+        message: message,
+        from_name: 'Dwello Property Management',
+        tenant_name: tenant.name,
+        property: tenant.property
+      })
+    });
+
+    const result = await parseApiResponse(response);
+
+    if (response.ok && result.success) {
+      // Success state
+      statusEl.style.background = 'rgba(183,228,199,0.3)';
+      statusEl.style.color = 'var(--forest)';
+      statusEl.textContent = '✓ Email sent to ' + tenant.name;
+
+      // Reset button
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> Send Email';
+
+      // Close modal and show toast
+      setTimeout(() => {
+        closeEmailModal();
+        showToast('Email sent to ' + tenant.name);
+      }, 1500);
+
+    } else {
+      throw new Error(result.error || 'Failed to send email');
+    }
+
+  } catch (error) {
+    console.warn('Email send failed:', error.message);
+
+    // Error state
+    statusEl.style.background = 'rgba(220,53,69,0.1)';
+    statusEl.style.color = '#dc3545';
+    statusEl.textContent = '✗ ' + error.message;
+
+    // Reset button
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> Send Email';
+  }
+}
+
+// Add spin animation for loading state
+const styleSheet = document.createElement('style');
+styleSheet.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+document.head.appendChild(styleSheet);
+
+// ═══════════════════════════════
+// TOAST
+// ═══════════════════════════════
+let toastTimeout;
+function showToast(msg, bg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.style.background = bg || 'var(--forest)';
+  t.style.opacity = '1';
+  t.style.transform = 'translateY(0)';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(8px)';
+  }, 3000);
+}
+
+// ═══════════════════════════════
+// KEYBOARD: close modal on Escape
+// ═══════════════════════════════
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('maintenance-modal').classList.remove('open');
+    document.getElementById('email-modal').classList.remove('open');
+    closeAddPropertyModal();
+  }
+});
+
+// ═══════════════════════════════
+// ADD PROPERTY MODAL
+// ═══════════════════════════════
+function openAddPropertyModal() {
+  editingPropertyId = null;
+  setPropertyModalMode('add');
+  document.getElementById('add-property-form').reset();
+  document.getElementById('add-property-modal').classList.add('open');
+}
+
+function closeAddPropertyModal(e) {
+  if (e && e.target !== document.getElementById('add-property-modal')) return;
+  document.getElementById('add-property-modal').classList.remove('open');
+  document.getElementById('add-property-form').reset();
+  document.getElementById('ap-photo-preview').style.display = 'none';
+  document.getElementById('ap-lookup-status').style.display = 'none';
+  document.getElementById('ap-photo-autofill-badge').style.display = 'none';
+  clearAddPropertyErrors();
+  editingPropertyId = null;
+  setPropertyModalMode('add');
+
+  // Reset auto-fill state
+  autoFilledFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('field-autofilled');
+  });
+  autoFilledFields.clear();
+
+  // Reset photo mode to upload
+  setPhotoMode('upload');
+}
+
+function isEditingProperty() {
+  return editingPropertyId !== null;
+}
+
+function setPropertyModalMode(mode) {
+  const isEdit = mode === 'edit';
+  document.getElementById('add-property-title').textContent = isEdit ? 'Edit Property' : 'Add a Property';
+  document.getElementById('add-property-description').textContent = isEdit
+    ? 'Update this property and save your changes.'
+    : 'Fill in the details below to add a new property to your portfolio.';
+  document.getElementById('add-property-submit-text').textContent = isEdit ? 'Save Changes' : 'Save Property';
+}
+
+function setInputValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value ?? '';
+}
+
+function openEditPropertyModal(id) {
+  const property = properties.find(item => item.id === id);
+  if (!property) {
+    showToast('Property not found.', '#D9534F');
+    return;
+  }
+
+  editingPropertyId = id;
+  setPropertyModalMode('edit');
+  clearAddPropertyErrors();
+  document.getElementById('add-property-form').reset();
+
+  setInputValue('ap-address', property.address);
+  setInputValue('ap-city', property.cityName);
+  setInputValue('ap-state', property.state);
+  setInputValue('ap-zip', property.zip);
+  setInputValue('ap-sqft', property.squareFeet ? property.squareFeet.toLocaleString('en-US') : '');
+  setInputValue('ap-est-value', property.estimatedValue ? property.estimatedValue.toLocaleString('en-US') : '');
+  setInputValue('ap-rent', property.rentAmount ? property.rentAmount.toLocaleString('en-US') : '');
+  setInputValue('ap-tenant-name', property.tenantName || '');
+  setInputValue('ap-tenant-email', property.tenantEmail || '');
+
+  if (property.photoUrl) {
+    setPhotoMode('url');
+    setInputValue('ap-photo-url', property.photoUrl);
+    previewPropertyPhotoUrl(property.photoUrl);
+  } else {
+    setPhotoMode('upload');
+    clearPhotoPreview();
+  }
+
+  document.getElementById('add-property-modal').classList.add('open');
+}
+
+async function deleteProperty(id) {
+  const property = properties.find(item => item.id === id);
+  if (!property) return;
+  if (!confirm(`Delete ${property.address}? This cannot be undone.`)) return;
+
+  try {
+    const response = await fetch(`/api/properties/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.error || 'Failed to delete property');
+    }
+
+    const index = properties.findIndex(item => item.id === id);
+    if (index !== -1) properties.splice(index, 1);
+    renderPropertyCards('#dashboard-cards-grid', true);
+    renderPropertyCards('#properties-cards-grid', false);
+    updatePortfolioStats();
+    showToast('Property deleted.', '#40916C');
+  } catch (error) {
+    console.error('Property delete failed:', error);
+    showToast('Could not delete property. Try again.', '#D9534F');
+  }
+}
+
+const AP_FIELDS = ['ap-address','ap-city','ap-state','ap-zip','ap-sqft','ap-est-value','ap-rent','ap-tenant-name','ap-tenant-email','ap-lease-start','ap-lease-end'];
+
+function clearAddPropertyErrors() {
+  AP_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    const err = document.getElementById(id + '-err');
+    if (el) el.classList.remove('field-invalid');
+    if (err) { err.textContent = ''; err.style.display = 'none'; }
+  });
+}
+
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  const err = document.getElementById(id + '-err');
+  if (el) el.classList.add('field-invalid');
+  if (err) { err.textContent = msg; err.style.display = 'block'; }
+}
+
+function formatCurrencyInput(input) {
+  const raw = input.value.replace(/[^0-9.]/g, '');
+  if (!raw) return;
+  const num = parseFloat(raw);
+  if (!isNaN(num)) {
+    input.value = num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+  }
+}
+
+function previewPropertyPhoto(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('ap-photo-img').src = e.target.result;
+      document.getElementById('ap-photo-preview').style.display = 'block';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function submitAddProperty(e) {
+  e.preventDefault();
+  clearAddPropertyErrors();
+
+  const address     = document.getElementById('ap-address').value.trim();
+  const city        = document.getElementById('ap-city').value.trim();
+  const state       = document.getElementById('ap-state').value.trim().toUpperCase();
+  const zip         = document.getElementById('ap-zip').value.trim();
+  const sqftRaw     = document.getElementById('ap-sqft').value.trim();
+  const valueRaw    = document.getElementById('ap-est-value').value.trim();
+  const rentRaw     = document.getElementById('ap-rent').value.trim();
+  const tenantName  = document.getElementById('ap-tenant-name').value.trim();
+  const tenantEmail = document.getElementById('ap-tenant-email').value.trim();
+  const leaseStart  = document.getElementById('ap-lease-start').value;
+  const leaseEnd    = document.getElementById('ap-lease-end').value;
+
+  let valid = true;
+
+  if (!address)                                       { showFieldError('ap-address', 'Street address is required.'); valid = false; }
+  if (!city)                                          { showFieldError('ap-city', 'City is required.'); valid = false; }
+  if (!state)                                         { showFieldError('ap-state', 'State is required.'); valid = false; }
+  if (!/^\d{5}$/.test(zip))                          { showFieldError('ap-zip', 'Zip code must be exactly 5 digits.'); valid = false; }
+
+  // Square feet is optional, but if provided must be valid
+  const sqftNum = sqftRaw ? parseFloat(sqftRaw.replace(/,/g, '')) : null;
+  if (sqftRaw && (isNaN(sqftNum) || sqftNum <= 0))   { showFieldError('ap-sqft', 'Enter a valid square footage.'); valid = false; }
+
+  const valueNum = parseFloat(valueRaw.replace(/,/g, ''));
+  if (!valueRaw || isNaN(valueNum) || valueNum <= 0) { showFieldError('ap-est-value', 'Enter a valid property value.'); valid = false; }
+
+  const rentNum = parseFloat(rentRaw.replace(/,/g, ''));
+  if (!rentRaw || isNaN(rentNum) || rentNum <= 0)    { showFieldError('ap-rent', 'Enter a valid monthly rent.'); valid = false; }
+
+  if (!tenantName)                                    { showFieldError('ap-tenant-name', 'Tenant name is required.'); valid = false; }
+  if (!tenantEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(tenantEmail)) { showFieldError('ap-tenant-email', 'Enter a valid email address.'); valid = false; }
+  if (!isEditingProperty()) {
+    if ((leaseStart && !leaseEnd) || (!leaseStart && leaseEnd)) {
+      showFieldError('ap-lease-end', 'Enter both lease dates, or leave both blank.');
+      valid = false;
+    }
+    if (leaseStart && leaseEnd && leaseEnd <= leaseStart) { showFieldError('ap-lease-end', 'Lease end must be after lease start.'); valid = false; }
+  }
+
+  if (!valid) return;
+
+  // Build photo src - handle both upload and URL modes
+  const photoSource = getPhotoSource();
+  const slug = encodeURIComponent(address.split(' ').slice(0, 3).join('+'));
+  let photoSrc;
+  if (photoSource.type === 'file' || photoSource.type === 'url') {
+    photoSrc = photoSource.value;
+  } else {
+    photoSrc = `https://placehold.co/400x200/2D6A4F/B7E4C7?text=${slug}`;
+  }
+
+  let savedProperty;
+  try {
+    const isEdit = isEditingProperty();
+    const endpoint = isEdit ? `/api/properties/${editingPropertyId}` : '/api/properties';
+    const response = await fetch(endpoint, {
+      method: isEdit ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        address,
+        city,
+        state,
+        zip,
+        tenantName,
+        tenantEmail,
+        rent: rentNum,
+        estimatedValue: valueNum,
+        squareFeet: sqftNum,
+        photoUrl: photoSrc
+      })
+    });
+
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to save property');
+    savedProperty = result;
+  } catch (error) {
+    console.error('Property save failed:', error);
+    showToast('Could not save property. Try again.', '#D9534F');
+    return;
+  }
+
+  const initials = initialsFromName(tenantName);
+
+  if (isEditingProperty()) {
+    const index = properties.findIndex(property => property.id === editingPropertyId);
+    if (index !== -1) properties[index] = mapApiPropertyToCard(savedProperty, index);
+    renderPropertyCards('#dashboard-cards-grid', true);
+    renderPropertyCards('#properties-cards-grid', false);
+    updatePortfolioStats();
+    closeAddPropertyModal();
+    showToast('Property updated successfully.', '#40916C');
+    return;
+  }
+
+  // Add saved property to local UI state
+  properties.unshift(mapApiPropertyToCard(savedProperty, 0));
+
+  // Add tenant to threads array so Contact button works
+  const gradients = [
+    'linear-gradient(135deg,#B7E4C7,#40916C)',
+    'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))',
+    'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))',
+    'linear-gradient(135deg,var(--mint),var(--sage))'
+  ];
+  const colors = ['#1B4332', '#8B6914', '#1B4332', '#1B4332'];
+  const gradIndex = threads.length % gradients.length;
+
+  threads.push({
+    name: tenantName,
+    initials: initials,
+    email: tenantEmail,
+    property: address + ', ' + city + ' ' + state,
+    avatarGrad: gradients[gradIndex],
+    avatarColor: colors[gradIndex],
+    messages: []
+  });
+
+  const newThreadIndex = threads.length - 1;
+
+  // Re-render property cards
+  renderPropertyCards('#dashboard-cards-grid', true);
+  renderPropertyCards('#properties-cards-grid', false);
+
+  // Add tenant row to directory
+  const tbody = document.getElementById('tenant-table-body');
+  if (tbody) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--sage));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--forest);">${initials}</div>
+          <span style="font-weight:500;">${tenantName}</span>
+        </div>
+      </td>
+      <td style="color:rgba(26,36,32,0.65);">${address}, ${city} ${state}</td>
+      <td><span class="chip chip-mint">${formatDate(leaseStart)}</span></td>
+      <td><span class="chip chip-gold">${formatDate(leaseEnd)}</span></td>
+      <td><button class="btn-primary btn-sm" onclick="openEmailModal(${newThreadIndex})">Contact</button></td>
+    `;
+    tbody.appendChild(row);
+  }
+
+  // Update stat counts
+  updatePortfolioStats();
+
+  // Close and reset modal
+  document.getElementById('add-property-modal').classList.remove('open');
+  document.getElementById('add-property-form').reset();
+  document.getElementById('ap-photo-preview').style.display = 'none';
+
+  // Success toast
+  showToast('Property added successfully.', '#40916C');
+}
+
+// ═══════════════════════════════
+// INIT
+// ═══════════════════════════════
+async function initializeApp() {
+  await loadPropertiesFromApi();
+  renderThread(0);
+}
+
+initializeApp();

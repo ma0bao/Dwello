@@ -1,0 +1,163 @@
+<!-- ═══════════════════════════════════════════
+     VIEW: LANDING PAGE
+════════════════════════════════════════════ -->
+<div id="view-landing" class="view active">
+  <!-- Nav -->
+  <nav style="position:fixed;top:0;left:0;right:0;z-index:40;background:rgba(248,246,241,0.90);backdrop-filter:blur(12px);border-bottom:1px solid rgba(183,228,199,0.4);">
+    <div style="max-width:1200px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--forest);letter-spacing:-0.03em;">
+        Dwello
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn-secondary btn-sm" onclick="showView('landlord')">I'm a Landlord</button>
+        <button class="btn-primary btn-sm" onclick="showView('tenant')">I'm a Tenant</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="noise-layer" style="min-height:100vh;background:linear-gradient(135deg,var(--forest) 0%,#2D6A4F 50%,#40916C 100%);display:flex;align-items:center;padding-top:68px;position:relative;overflow:hidden;">
+    <!-- Decorative circles -->
+    <div style="position:absolute;top:-80px;right:-80px;width:500px;height:500px;border-radius:50%;background:rgba(212,168,83,0.08);pointer-events:none;"></div>
+    <div style="position:absolute;bottom:-120px;left:-60px;width:400px;height:400px;border-radius:50%;background:rgba(183,228,199,0.06);pointer-events:none;"></div>
+    <div style="position:absolute;top:30%;left:55%;width:200px;height:200px;border-radius:50%;border:1px solid rgba(212,168,83,0.15);pointer-events:none;"></div>
+
+    <div style="max-width:1200px;margin:0 auto;padding:80px 32px;position:relative;z-index:2;">
+      <div style="max-width:680px;">
+        <div class="animate-fade-up">
+          <span class="section-eyebrow" style="color:rgba(183,228,199,0.8);">Property Management, Reimagined</span>
+        </div>
+        <h1 class="animate-fade-up animate-fade-up-delay-1" style="font-size:clamp(48px,6vw,80px);color:var(--offwhite);margin:20px 0 24px;line-height:1.05;">
+          Your properties.<br/>
+          <em style="color:var(--gold);">Your people.</em><br/>
+          All in one place.
+        </h1>
+        <p class="animate-fade-up animate-fade-up-delay-2" style="font-size:18px;color:rgba(248,246,241,0.75);max-width:520px;margin-bottom:40px;">
+          Dwello brings landlords and tenants together in a shared workspace — manage your portfolio, communicate clearly, and stay organized without the chaos.
+        </p>
+        <div class="animate-fade-up animate-fade-up-delay-3" style="display:flex;gap:16px;flex-wrap:wrap;">
+          <button class="btn-gold" onclick="showView('landlord')" style="font-size:16px;padding:16px 32px;">
+            I'm a Landlord
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+          <button class="btn-secondary" onclick="showView('tenant')" style="color:var(--offwhite);border-color:rgba(248,246,241,0.4);font-size:16px;padding:16px 32px;">
+            I'm a Tenant
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating card mockup -->
+    <div class="animate-fade-up animate-fade-up-delay-4" style="position:absolute;right:80px;top:50%;transform:translateY(-50%);width:320px;display:none;" id="hero-card">
+      <!-- shown on wider screens via JS -->
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section style="padding:100px 32px;max-width:1200px;margin:0 auto;">
+    <div style="text-align:center;margin-bottom:64px;">
+      <span class="section-eyebrow">What We Do</span>
+      <h2 style="font-size:clamp(32px,4vw,52px);margin-top:12px;color:var(--forest);">Everything you need,<br/>nothing you don't.</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:32px;">
+      <!-- Feature 1 -->
+      <div class="dash-surface" style="position:relative;overflow:hidden;">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--mint),var(--sage));border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3 style="font-size:22px;color:var(--forest);margin:0 0 12px;">Portfolio Overview</h3>
+        <p style="color:rgba(26,36,32,0.65);margin:0;font-size:15px;">See all your properties at a glance. Track tenant info, estimated values, and monthly rents from one clean dashboard.</p>
+        <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(183,228,199,0.2);"></div>
+      </div>
+      <!-- Feature 2 -->
+      <div class="dash-surface" style="position:relative;overflow:hidden;">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--gold),#E8B85E);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h3 style="font-size:22px;color:var(--forest);margin:0 0 12px;">Tenant Directory</h3>
+        <p style="color:rgba(26,36,32,0.65);margin:0;font-size:15px;">A living record of every tenant across your portfolio — lease dates, contact info, and a direct line to message them instantly.</p>
+        <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(212,168,83,0.1);"></div>
+      </div>
+      <!-- Feature 3 -->
+      <div class="dash-surface" style="position:relative;overflow:hidden;">
+        <div style="width:48px;height:48px;background:linear-gradient(135deg,var(--forest),var(--sage));border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        </div>
+        <h3 style="font-size:22px;color:var(--forest);margin:0 0 12px;">Messaging</h3>
+        <p style="color:rgba(26,36,32,0.65);margin:0;font-size:15px;">Clear, direct communication between landlords and tenants. No email chains, no missed calls — just organized conversations.</p>
+        <div style="position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(27,67,50,0.05);"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section style="background:var(--forest);padding:100px 32px;">
+    <div style="max-width:1200px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:64px;">
+        <span class="section-eyebrow" style="color:var(--mint);">How It Works</span>
+        <h2 style="font-size:clamp(32px,4vw,52px);margin-top:12px;color:var(--offwhite);">Up and running<br/>in three steps.</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:40px;position:relative;">
+        <!-- Step 1 -->
+        <div style="text-align:center;">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(183,228,199,0.15);border:2px solid rgba(183,228,199,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;position:relative;">
+            <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);">1</span>
+          </div>
+          <h3 style="font-size:20px;color:var(--offwhite);margin:0 0 12px;">Add your properties</h3>
+          <p style="color:rgba(248,246,241,0.6);font-size:15px;margin:0;">List your properties with addresses, photos, and lease details in minutes.</p>
+        </div>
+        <!-- Step 2 -->
+        <div style="text-align:center;">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(183,228,199,0.15);border:2px solid rgba(183,228,199,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+            <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);">2</span>
+          </div>
+          <h3 style="font-size:20px;color:var(--offwhite);margin:0 0 12px;">Invite tenants</h3>
+          <p style="color:rgba(248,246,241,0.6);font-size:15px;margin:0;">Send an invite link and tenants get their own dashboard view tied to their unit.</p>
+        </div>
+        <!-- Step 3 -->
+        <div style="text-align:center;">
+          <div style="width:72px;height:72px;border-radius:50%;background:rgba(183,228,199,0.15);border:2px solid rgba(183,228,199,0.3);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+            <span style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);">3</span>
+          </div>
+          <h3 style="font-size:20px;color:var(--offwhite);margin:0 0 12px;">Communicate &amp; manage</h3>
+          <p style="color:rgba(248,246,241,0.6);font-size:15px;margin:0;">Message directly, track maintenance requests, and stay organized — all in one place.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section style="padding:80px 32px;max-width:1200px;margin:0 auto;text-align:center;">
+    <div style="background:linear-gradient(135deg,#F0EDE6 0%,var(--offwhite) 100%);border-radius:24px;padding:64px 40px;border:1px solid rgba(183,228,199,0.5);box-shadow:0 4px 24px rgba(27,67,50,0.06),0 16px 48px rgba(27,67,50,0.04);">
+      <span class="section-eyebrow">Get Started Today</span>
+      <h2 style="font-size:clamp(28px,4vw,48px);margin:12px 0 20px;color:var(--forest);">Ready to simplify<br/>property management?</h2>
+      <p style="color:rgba(26,36,32,0.65);font-size:16px;max-width:480px;margin:0 auto 36px;">Join landlords and tenants who've made the switch to a calmer, clearer way of managing real estate.</p>
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="showView('landlord')" style="font-size:16px;padding:16px 32px;">
+          Start as a Landlord
+        </button>
+        <button class="btn-secondary" onclick="showView('tenant')" style="font-size:16px;padding:16px 32px;">
+          Join as a Tenant
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="background:var(--slate);padding:48px 32px;">
+    <div style="max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:24px;">
+      <div>
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--offwhite);letter-spacing:-0.03em;">Dwello</div>
+        <div style="font-size:13px;color:rgba(248,246,241,0.45);margin-top:4px;">Your properties. Your people. All in one place.</div>
+      </div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;">
+        <a href="#" style="font-size:14px;color:rgba(248,246,241,0.55);text-decoration:none;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--offwhite)'" onmouseout="this.style.color='rgba(248,246,241,0.55)'">Features</a>
+        <a href="#" style="font-size:14px;color:rgba(248,246,241,0.55);text-decoration:none;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--offwhite)'" onmouseout="this.style.color='rgba(248,246,241,0.55)'">How It Works</a>
+        <a href="#" style="font-size:14px;color:rgba(248,246,241,0.55);text-decoration:none;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--offwhite)'" onmouseout="this.style.color='rgba(248,246,241,0.55)'">Privacy</a>
+        <a href="#" style="font-size:14px;color:rgba(248,246,241,0.55);text-decoration:none;font-family:'DM Sans',sans-serif;" onmouseover="this.style.color='var(--offwhite)'" onmouseout="this.style.color='rgba(248,246,241,0.55)'">Contact</a>
+      </div>
+      <div style="font-size:13px;color:rgba(248,246,241,0.35);font-family:'DM Sans',sans-serif;">© 2025 Dwello</div>
+    </div>
+  </footer>
+</div>

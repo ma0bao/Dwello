@@ -1,0 +1,240 @@
+<!-- ═══════════════════════════════════════════
+     MAINTENANCE MODAL
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="maintenance-modal" onclick="closeMaintenanceModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h3 style="font-size:22px;color:var(--forest);margin:0;">New Maintenance Request</h3>
+      <button onclick="closeMaintenanceModal()" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(27,67,50,0.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--slate);" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form onsubmit="submitMaintenance(event)">
+      <div style="margin-bottom:16px;">
+        <label class="form-label" for="maint-label">Issue Label</label>
+        <input class="form-input" id="maint-label" type="text" placeholder="e.g., Broken window latch" required />
+      </div>
+      <div style="margin-bottom:24px;">
+        <label class="form-label" for="maint-desc">Description</label>
+        <textarea class="form-input" id="maint-desc" rows="4" placeholder="Describe the issue in detail…" required style="resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="button" class="btn-secondary btn-sm" onclick="closeMaintenanceModal()">Cancel</button>
+        <button type="submit" class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          Submit Request
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     EMAIL TENANT MODAL
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="email-modal" onclick="closeEmailModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()" style="max-width:500px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h3 style="font-size:22px;color:var(--forest);margin:0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:8px;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+        Email Tenant
+      </h3>
+      <button onclick="closeEmailModal()" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(27,67,50,0.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--slate);" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Recipient Info -->
+    <div style="background:rgba(183,228,199,0.2);border-radius:12px;padding:16px;margin-bottom:20px;border:1px solid rgba(64,145,108,0.15);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div id="email-recipient-avatar" style="width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;"></div>
+        <div>
+          <div id="email-recipient-name" style="font-weight:600;color:var(--forest);font-size:15px;"></div>
+          <div id="email-recipient-email" style="font-size:13px;color:rgba(26,36,32,0.6);"></div>
+          <div id="email-recipient-property" style="font-size:12px;color:rgba(26,36,32,0.5);margin-top:2px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <form onsubmit="sendTenantEmail(event)">
+      <div style="margin-bottom:16px;">
+        <label class="form-label" for="email-subject">Subject</label>
+        <input class="form-input" id="email-subject" type="text" placeholder="e.g., Lease Renewal Reminder" required />
+      </div>
+      <div style="margin-bottom:24px;">
+        <label class="form-label" for="email-message">Message</label>
+        <textarea class="form-input" id="email-message" rows="6" placeholder="Write your message to the tenant…" required style="resize:vertical;"></textarea>
+      </div>
+
+      <!-- Sending indicator -->
+      <div id="email-sending-status" style="display:none;margin-bottom:16px;padding:12px;border-radius:8px;text-align:center;font-size:14px;"></div>
+
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button type="button" class="btn-secondary btn-sm" onclick="closeEmailModal()">Cancel</button>
+        <button type="submit" class="btn-primary" id="email-send-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+          Send Email
+        </button>
+      </div>
+    </form>
+
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(27,67,50,0.1);font-size:12px;color:rgba(26,36,32,0.5);text-align:center;">
+      Email will be sent from <strong>dwellosupport@gmail.com</strong>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     ADD PROPERTY MODAL
+════════════════════════════════════════════ -->
+<div class="modal-overlay" id="add-property-modal" onclick="closeAddPropertyModal(event)">
+  <div class="add-prop-modal-box" onclick="event.stopPropagation()">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+      <div>
+        <h3 id="add-property-title" style="font-size:24px;color:var(--forest);margin:0 0 6px;">Add a Property</h3>
+        <p id="add-property-description" style="font-size:14px;color:rgba(26,36,32,0.55);margin:0;font-family:'DM Sans',sans-serif;">Fill in the details below to add a new property to your portfolio.</p>
+      </div>
+      <button onclick="closeAddPropertyModal()" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(27,67,50,0.08);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--slate);flex-shrink:0;margin-left:16px;" aria-label="Close">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <form id="add-property-form" onsubmit="submitAddProperty(event)" novalidate>
+
+      <!-- Section 1: Property Details -->
+      <div style="margin:24px 0 0;">
+        <div class="form-section-label">Property Details</div>
+        <div style="display:grid;gap:20px;">
+          <div>
+            <label class="form-label" for="ap-address">Street Address</label>
+            <input class="form-input" id="ap-address" type="text" placeholder="e.g. 142 Maple Street" style="border-radius:8px;border:1px solid #D1CFC9;" />
+            <div class="field-error-msg" id="ap-address-err"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <label class="form-label" for="ap-city">City</label>
+              <input class="form-input" id="ap-city" type="text" placeholder="e.g. Austin" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-city-err"></div>
+            </div>
+            <div>
+              <label class="form-label" for="ap-state">State</label>
+              <input class="form-input" id="ap-state" type="text" placeholder="e.g. TX" maxlength="2" style="border-radius:8px;border:1px solid #D1CFC9;text-transform:uppercase;" />
+              <div class="field-error-msg" id="ap-state-err"></div>
+            </div>
+          </div>
+          <div>
+            <label class="form-label" for="ap-zip">Zip Code</label>
+            <input class="form-input" id="ap-zip" type="text" placeholder="e.g. 78701" maxlength="5" style="border-radius:8px;border:1px solid #D1CFC9;" />
+            <div class="field-error-msg" id="ap-zip-err"></div>
+          </div>
+          <!-- Zillow Lookup Button -->
+          <div id="ap-lookup-section">
+            <button type="button" id="ap-lookup-btn" onclick="lookupPropertyData()" style="width:100%;padding:12px 16px;background:linear-gradient(135deg,rgba(183,228,199,0.25),rgba(64,145,108,0.15));border:1px dashed var(--sage);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;color:var(--forest);transition:background 0.2s ease,border-color 0.2s ease;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span id="ap-lookup-btn-text">Auto-fill from Address</span>
+            </button>
+            <div id="ap-lookup-status" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:center;"></div>
+          </div>
+          <!-- Property Photo with Upload/URL toggle -->
+          <div>
+            <label class="form-label" for="ap-photo">Property Photo <span style="font-weight:400;color:rgba(26,36,32,0.4);font-size:12px;">(optional)</span></label>
+            <div id="ap-photo-tabs" style="display:flex;gap:8px;margin-bottom:10px;">
+              <button type="button" class="photo-tab active" id="ap-photo-upload-tab" onclick="setPhotoMode('upload')">Upload</button>
+              <button type="button" class="photo-tab" id="ap-photo-url-tab" onclick="setPhotoMode('url')">From URL</button>
+            </div>
+            <div id="ap-photo-upload-mode">
+              <input class="form-input" id="ap-photo" type="file" accept="image/*" onchange="previewPropertyPhoto(this)" style="border-radius:8px;border:1px solid #D1CFC9;padding:10px 14px;cursor:pointer;" />
+            </div>
+            <div id="ap-photo-url-mode" style="display:none;">
+              <input class="form-input" id="ap-photo-url" type="url" placeholder="https://..." oninput="clearAutoFillIndicator('ap-photo-url')" onchange="previewPropertyPhotoUrl(this.value)" style="border-radius:8px;border:1px solid #D1CFC9;" />
+            </div>
+            <div id="ap-photo-preview" style="display:none;margin-top:10px;position:relative;">
+              <img id="ap-photo-img" src="" alt="Preview" style="width:100%;height:140px;object-fit:cover;border-radius:8px;border:1px solid rgba(183,228,199,0.6);" />
+              <button type="button" onclick="clearPhotoPreview()" style="position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.5);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <div id="ap-photo-autofill-badge" style="display:none;position:absolute;bottom:8px;left:8px;background:var(--gold);color:var(--slate);font-size:11px;font-weight:600;padding:4px 8px;border-radius:4px;font-family:'DM Sans',sans-serif;">Auto-filled</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Property Details & Financials -->
+      <div style="margin:28px 0 0;">
+        <div class="form-section-label">Property Details & Financials</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+          <div>
+            <label class="form-label" for="ap-sqft">Square Feet</label>
+            <input class="form-input" id="ap-sqft" type="text" placeholder="1,850" style="border-radius:8px;border:1px solid #D1CFC9;" oninput="clearAutoFillIndicator('ap-sqft')" onblur="formatNumberInput(this)" />
+            <div class="field-error-msg" id="ap-sqft-err"></div>
+          </div>
+          <div>
+            <label class="form-label" for="ap-value">Est. Property Value</label>
+            <div style="position:relative;">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(26,36,32,0.45);pointer-events:none;">$</span>
+              <input class="form-input" id="ap-est-value" type="text" placeholder="485,000" style="padding-left:28px;border-radius:8px;border:1px solid #D1CFC9;" oninput="clearAutoFillIndicator('ap-est-value')" onblur="formatCurrencyInput(this)" />
+            </div>
+            <div class="field-error-msg" id="ap-est-value-err"></div>
+          </div>
+          <div>
+            <label class="form-label" for="ap-rent">Monthly Rent</label>
+            <div style="position:relative;">
+              <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-family:'DM Sans',sans-serif;font-size:14px;color:rgba(26,36,32,0.45);pointer-events:none;">$</span>
+              <input class="form-input" id="ap-rent" type="text" placeholder="2,200" style="padding-left:28px;border-radius:8px;border:1px solid #D1CFC9;" oninput="clearAutoFillIndicator('ap-rent')" onblur="formatCurrencyInput(this)" />
+            </div>
+            <div class="field-error-msg" id="ap-rent-err"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Tenant Assignment -->
+      <div style="margin:28px 0 0;">
+        <div class="form-section-label">Tenant Assignment</div>
+        <div style="display:grid;gap:20px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <label class="form-label" for="ap-tenant-name">Tenant Name</label>
+              <input class="form-input" id="ap-tenant-name" type="text" placeholder="Full name" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-tenant-name-err"></div>
+            </div>
+            <div>
+              <label class="form-label" for="ap-tenant-email">Tenant Email</label>
+              <input class="form-input" id="ap-tenant-email" type="email" placeholder="tenant@email.com" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-tenant-email-err"></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+              <label class="form-label" for="ap-lease-start">Lease Start Date</label>
+              <input class="form-input" id="ap-lease-start" type="date" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-lease-start-err"></div>
+            </div>
+            <div>
+              <label class="form-label" for="ap-lease-end">Lease End Date</label>
+              <input class="form-input" id="ap-lease-end" type="date" style="border-radius:8px;border:1px solid #D1CFC9;" />
+              <div class="field-error-msg" id="ap-lease-end-err"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:20px;border-top:1px solid rgba(183,228,199,0.4);">
+        <button type="button" style="background:none;border:none;font-family:'DM Sans',sans-serif;font-size:15px;color:rgba(26,36,32,0.5);cursor:pointer;padding:10px 4px;font-weight:500;transition:opacity 0.15s ease;" onmouseover="this.style.opacity='0.7'" onmouseout="this.style.opacity='1'" onclick="closeAddPropertyModal()">Cancel</button>
+        <button id="add-property-submit-btn" type="submit" class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          <span id="add-property-submit-text">Save Property</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SUCCESS TOAST
+════════════════════════════════════════════ -->
+<div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--forest);color:var(--offwhite);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;padding:14px 20px;border-radius:12px;box-shadow:0 4px 24px rgba(27,67,50,0.30);opacity:0;transform:translateY(8px);transition:opacity 0.25s ease,transform 0.25s cubic-bezier(0.16,1,0.3,1);pointer-events:none;display:flex;align-items:center;gap:10px;z-index:100;">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--mint)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg">Done!</span>
+</div>
