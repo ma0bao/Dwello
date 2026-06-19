@@ -214,7 +214,52 @@ function formatNumberInput(input) {
 // ═══════════════════════════════
 // PROPERTY DATA
 // ═══════════════════════════════
+const LOCAL_PROPERTIES_STORAGE_KEY = 'dwello.properties.v1';
 const properties = [];
+
+const demoApiProperties = [
+  {
+    id: 3,
+    address: '331 Lakeview Drive',
+    city: 'Nashville',
+    state: 'TN',
+    zip: '37201',
+    tenantName: 'Priya Nair',
+    tenantEmail: 'priya.nair@email.com',
+    rent: 1950,
+    estimatedValue: 395000,
+    squareFeet: 1650,
+    photoUrl: 'https://placehold.co/400x200/40916C/F8F6F1?text=331+Lakeview+Dr'
+  },
+  {
+    id: 2,
+    address: '78 Birchwood Ave',
+    city: 'Denver',
+    state: 'CO',
+    zip: '80202',
+    tenantName: 'James Okafor',
+    tenantEmail: 'james.okafor@email.com',
+    rent: 2800,
+    estimatedValue: 620000,
+    squareFeet: 2100,
+    photoUrl: 'https://placehold.co/400x200/D4A853/1A2420?text=78+Birchwood+Ave'
+  },
+  {
+    id: 1,
+    address: '142 Maple Street',
+    city: 'Austin',
+    state: 'TX',
+    zip: '78701',
+    tenantName: 'Sarah Mitchell',
+    tenantEmail: 'sarah.mitchell@email.com',
+    rent: 2200,
+    estimatedValue: 485000,
+    squareFeet: 1850,
+    photoUrl: 'https://placehold.co/400x200/2D6A4F/B7E4C7?text=142+Maple+St'
+  }
+];
+
+let propertyPersistenceMode = 'api';
 
 const propertyAvatarStyles = [
   { avatarGrad: 'linear-gradient(135deg,#B7E4C7,#40916C)', avatarColor: '#1B4332' },
@@ -265,18 +310,112 @@ function mapApiPropertyToCard(property, index) {
   };
 }
 
+function createApiUnavailableError(message) {
+  const error = new Error(message);
+  error.apiUnavailable = true;
+  return error;
+}
+
+async function requestJson(endpoint, options = {}) {
+  let response;
+  try {
+    response = await fetch(endpoint, options);
+  } catch (error) {
+    throw createApiUnavailableError(error.message || 'API request failed');
+  }
+
+  if (response.status === 204) return null;
+
+  const contentType = response.headers.get('content-type') || '';
+  const isJson = contentType.includes('application/json');
+  const result = isJson ? await response.json() : null;
+
+  if (!response.ok) {
+    if (response.status === 404 || response.status === 405 || !isJson) {
+      throw createApiUnavailableError(`API unavailable: ${response.status}`);
+    }
+    throw new Error(result?.error || `Request failed with ${response.status}`);
+  }
+
+  if (!isJson) {
+    throw createApiUnavailableError('API did not return JSON');
+  }
+
+  return result;
+}
+
+function readLocalProperties() {
+  try {
+    const saved = window.localStorage.getItem(LOCAL_PROPERTIES_STORAGE_KEY);
+    if (!saved) return demoApiProperties.map(property => ({ ...property }));
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : demoApiProperties.map(property => ({ ...property }));
+  } catch (error) {
+    console.warn('Could not read local properties:', error);
+    return demoApiProperties.map(property => ({ ...property }));
+  }
+}
+
+function writeLocalProperties(apiProperties) {
+  try {
+    window.localStorage.setItem(LOCAL_PROPERTIES_STORAGE_KEY, JSON.stringify(apiProperties));
+  } catch (error) {
+    console.warn('Could not save local properties:', error);
+  }
+}
+
+function saveLocalProperty(payload, id = null) {
+  const localProperties = readLocalProperties();
+  if (id) {
+    const index = localProperties.findIndex(property => Number(property.id) === Number(id));
+    if (index === -1) throw new Error('Property not found');
+    const updated = { ...localProperties[index], ...payload, id: Number(id), updatedAt: new Date().toISOString() };
+    localProperties[index] = updated;
+    writeLocalProperties(localProperties);
+    return updated;
+  }
+
+  const nextId = localProperties.reduce((max, property) => Math.max(max, Number(property.id) || 0), 0) + 1;
+  const created = {
+    id: nextId,
+    ...payload,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  localProperties.unshift(created);
+  writeLocalProperties(localProperties);
+  return created;
+}
+
+function deleteLocalProperty(id) {
+  const localProperties = readLocalProperties();
+  const nextProperties = localProperties.filter(property => Number(property.id) !== Number(id));
+  if (nextProperties.length === localProperties.length) throw new Error('Property not found');
+  writeLocalProperties(nextProperties);
+}
+
+function renderPropertiesFromApi(apiProperties) {
+  properties.splice(0, properties.length, ...apiProperties.map(mapApiPropertyToCard));
+  renderPropertyCards('#dashboard-cards-grid', true);
+  renderPropertyCards('#properties-cards-grid', false);
+  updatePortfolioStats();
+}
+
 async function loadPropertiesFromApi() {
   try {
-    const response = await fetch('/api/properties');
-    if (!response.ok) throw new Error('Could not load properties');
-    const apiProperties = await response.json();
-    properties.splice(0, properties.length, ...apiProperties.map(mapApiPropertyToCard));
-    renderPropertyCards('#dashboard-cards-grid', true);
-    renderPropertyCards('#properties-cards-grid', false);
-    updatePortfolioStats();
+    const apiProperties = await requestJson('/api/properties');
+    propertyPersistenceMode = 'api';
+    renderPropertiesFromApi(apiProperties);
   } catch (error) {
-    console.error('Property load failed:', error);
-    showToast('Could not load saved properties.', '#D9534F');
+    if (!error.apiUnavailable) {
+      console.error('Property load failed:', error);
+      showToast('Could not load saved properties.', '#D9534F');
+      return;
+    }
+
+    propertyPersistenceMode = 'local';
+    console.info('Properties API unavailable; using browser storage fallback.');
+    renderPropertiesFromApi(readLocalProperties());
   }
 }
 
@@ -737,10 +876,10 @@ async function deleteProperty(id) {
   if (!confirm(`Delete ${property.address}? This cannot be undone.`)) return;
 
   try {
-    const response = await fetch(`/api/properties/${id}`, { method: 'DELETE' });
-    if (!response.ok) {
-      const result = await response.json().catch(() => ({}));
-      throw new Error(result.error || 'Failed to delete property');
+    if (propertyPersistenceMode === 'local') {
+      deleteLocalProperty(id);
+    } else {
+      await requestJson(`/api/properties/${id}`, { method: 'DELETE' });
     }
 
     const index = properties.findIndex(item => item.id === id);
@@ -750,6 +889,22 @@ async function deleteProperty(id) {
     updatePortfolioStats();
     showToast('Property deleted.', '#40916C');
   } catch (error) {
+    if (error.apiUnavailable) {
+      try {
+        propertyPersistenceMode = 'local';
+        deleteLocalProperty(id);
+        const index = properties.findIndex(item => item.id === id);
+        if (index !== -1) properties.splice(index, 1);
+        renderPropertyCards('#dashboard-cards-grid', true);
+        renderPropertyCards('#properties-cards-grid', false);
+        updatePortfolioStats();
+        showToast('Property deleted from this browser.', '#40916C');
+        return;
+      } catch (localError) {
+        console.error('Local property delete failed:', localError);
+      }
+    }
+
     console.error('Property delete failed:', error);
     showToast('Could not delete property. Try again.', '#D9534F');
   }
@@ -854,34 +1009,50 @@ async function submitAddProperty(e) {
     photoSrc = `https://placehold.co/400x200/2D6A4F/B7E4C7?text=${slug}`;
   }
 
+  const propertyPayload = {
+    address,
+    city,
+    state,
+    zip,
+    tenantName,
+    tenantEmail,
+    rent: rentNum,
+    estimatedValue: valueNum,
+    squareFeet: sqftNum,
+    photoUrl: photoSrc
+  };
+
   let savedProperty;
+  let savedLocally = false;
   try {
     const isEdit = isEditingProperty();
-    const endpoint = isEdit ? `/api/properties/${editingPropertyId}` : '/api/properties';
-    const response = await fetch(endpoint, {
-      method: isEdit ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        address,
-        city,
-        state,
-        zip,
-        tenantName,
-        tenantEmail,
-        rent: rentNum,
-        estimatedValue: valueNum,
-        squareFeet: sqftNum,
-        photoUrl: photoSrc
-      })
-    });
-
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Failed to save property');
-    savedProperty = result;
+    if (propertyPersistenceMode === 'local') {
+      savedProperty = saveLocalProperty(propertyPayload, isEdit ? editingPropertyId : null);
+      savedLocally = true;
+    } else {
+      const endpoint = isEdit ? `/api/properties/${editingPropertyId}` : '/api/properties';
+      savedProperty = await requestJson(endpoint, {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(propertyPayload)
+      });
+    }
   } catch (error) {
-    console.error('Property save failed:', error);
-    showToast('Could not save property. Try again.', '#D9534F');
-    return;
+    if (error.apiUnavailable) {
+      try {
+        propertyPersistenceMode = 'local';
+        savedProperty = saveLocalProperty(propertyPayload, isEditingProperty() ? editingPropertyId : null);
+        savedLocally = true;
+      } catch (localError) {
+        console.error('Local property save failed:', localError);
+        showToast('Could not save property in this browser.', '#D9534F');
+        return;
+      }
+    } else {
+      console.error('Property save failed:', error);
+      showToast('Could not save property. Try again.', '#D9534F');
+      return;
+    }
   }
 
   const initials = initialsFromName(tenantName);
@@ -893,7 +1064,7 @@ async function submitAddProperty(e) {
     renderPropertyCards('#properties-cards-grid', false);
     updatePortfolioStats();
     closeAddPropertyModal();
-    showToast('Property updated successfully.', '#40916C');
+    showToast(savedLocally ? 'Property updated in this browser.' : 'Property updated successfully.', '#40916C');
     return;
   }
 
@@ -954,7 +1125,7 @@ async function submitAddProperty(e) {
   document.getElementById('ap-photo-preview').style.display = 'none';
 
   // Success toast
-  showToast('Property added successfully.', '#40916C');
+  showToast(savedLocally ? 'Property saved in this browser.' : 'Property added successfully.', '#40916C');
 }
 
 // ═══════════════════════════════

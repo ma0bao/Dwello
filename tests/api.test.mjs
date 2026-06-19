@@ -268,3 +268,12 @@ test('properties API validates required property fields', async (t) => {
   assert.equal(body.error, 'Missing required fields');
   assert.deepEqual(body.required, ['address', 'city', 'state', 'zip']);
 });
+
+test('frontend falls back to browser storage when deployed without API routes', async () => {
+  const appSource = await readFile(new URL('../src/app.js', import.meta.url), 'utf8');
+  assert.match(appSource, /LOCAL_PROPERTIES_STORAGE_KEY/);
+  assert.match(appSource, /propertyPersistenceMode = 'local'/);
+  assert.match(appSource, /saveLocalProperty\(propertyPayload/);
+  assert.match(appSource, /Property saved in this browser\./);
+  assert.doesNotMatch(appSource, /const response = await fetch\(endpoint/);
+});
