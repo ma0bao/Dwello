@@ -5,21 +5,47 @@
 
 ## Executive Summary
 
-Transform Dwello from a single-user prototype into a production-ready SaaS property management platform through four focused development phases. Timeline: 16 weeks (4 phases × 2-4 week sprints). Primary goal: deep learning of full-stack SaaS technologies, culminating in a revenue-generating product.
+Transform Dwello from a single-user prototype into a production-ready SaaS property management platform through four focused development phases. Timeline: 16 weeks target (4 phases × 2-4 week sprints). **Primary goal: deep learning of full-stack SaaS technologies** (auth, payments, real-time, deployment). Building a feature-complete platform is the vehicle for learning; eventual revenue generation is a secondary aspiration, not a committed outcome.
 
 ## Goals
 
 **Primary Objectives:**
-- Master authentication, payments, real-time features, and production deployment
-- Build production-ready SaaS infrastructure with comprehensive testing
-- Create a revenue-generating property management platform
-- Establish patterns for quality software development (testing, CI/CD, monitoring)
+- **Master full-stack SaaS fundamentals:** authentication, payments, real-time features, and production deployment
+- **Build production-grade infrastructure:** comprehensive testing, CI/CD, monitoring, security best practices
+- **Establish quality development habits:** testing first, security by default, iterative refinement
+- *(Secondary aspiration)* Demonstrate a feature-complete platform suitable for real users if pursued
 
 **Learning Outcomes:**
-- Supabase Auth + RLS policies for multi-tenant applications
-- Stripe integration (subscriptions, webhooks, financial tracking)
-- Real-time communication (WebSockets, live updates, notifications)
+- Supabase Auth + RLS policies for multi-tenant applications (or build sessions/JWTs from scratch for deeper learning)
+- Stripe integration for subscriptions and webhooks *(goal: understand payment processing, not monetize)*
+- Real-time communication fundamentals (WebSockets, live updates, notifications)
 - Production hardening (security, performance, monitoring, deployment)
+
+## Learning Depth: Build vs. Managed
+
+For each major capability, there's a tradeoff between using a managed service (ships fast, teaches integration patterns) and building a minimal version from scratch (slower, teaches the underlying primitives). The recommendation: **pick 1-2 areas to build the hard way** and use managed services elsewhere. This balances deep learning with forward progress.
+
+### Authentication
+- **Managed (Supabase Auth):** Plug-and-play with OAuth providers, session management, password reset flows. Learn: integration, RLS policies, session lifecycle.
+- **Build (Sessions/JWTs/OAuth from scratch):** Implement bcrypt password hashing, session tokens or JWTs, OAuth 2.0 redirect flow manually. Learn: crypto primitives, token security, auth protocols.
+- **DECISION:** ____________________
+
+### Payments
+- **Managed (Stripe):** Hosted checkout, webhook events, subscription management. Learn: webhook handling, idempotency, subscription state machines.
+- **Build (Payment Intents API from scratch):** Implement card tokenization, payment flow, refunds, manual subscription tracking. Learn: PCI compliance concerns, payment state machines, financial reconciliation.
+- **DECISION:** ____________________
+
+### Real-time Communication
+- **Managed (Supabase Realtime):** Subscribe to database changes, automatic WebSocket connections. Learn: real-time data patterns, optimistic updates, conflict resolution.
+- **Build (Raw WebSocket server):** Implement WebSocket server (ws or socket.io), connection management, message routing, presence tracking. Learn: WebSocket protocol, connection lifecycle, scaling considerations.
+- **DECISION:** ____________________
+
+### File Storage
+- **Managed (Supabase Storage):** S3-compatible API, access control via RLS, CDN distribution. Learn: signed URLs, access patterns, RLS policies for files.
+- **Build (S3 SDK + custom middleware):** Integrate AWS S3 directly, implement presigned URLs, build custom access control. Learn: cloud storage APIs, security patterns, direct cloud integration.
+- **DECISION:** ____________________
+
+**Recommended deep-dive picks:** Authentication and Real-time. These teach the most transferable primitives (sessions, tokens, OAuth flows for auth; WebSocket protocol, connection management for real-time) that apply across any stack. Payments and storage are commodity services where the managed abstractions are the real-world standard.
 
 ## Current State Assessment
 
@@ -51,61 +77,83 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 ## Roadmap Overview
 
 ### Timeline
-**Total Duration:** 16 weeks
+**Total Duration:** 16 weeks *(target, not commitment)*
 **Cadence:** 2-week sprints (8 sprints total)
-**Phases:** 4 major phases
+**Phases:** 4 major phases (Phases 1-2 core, Phases 3-4 optional stretch goals)
+
+**Learning Pace Note:** Learning while building roughly doubles time estimates compared to implementation alone. These timelines assume exploration, mistakes, refactoring, and deep understanding — not just feature completion. **Finishing two phases deeply beats rushing through four.** Phases 3-4 are stretch goals; delivering Phases 1-2 with mastery is a successful outcome.
 
 ### Phase Progression
-1. **Phase 1 (Weeks 1-4):** Auth + Testing Foundation
-2. **Phase 2 (Weeks 5-8):** Payments + Financial Tracking
-3. **Phase 3 (Weeks 9-12):** Real-time Features + Tenant Portal
-4. **Phase 4 (Weeks 13-16):** Production Hardening + Launch Prep
+1. **Phase 1 (Weeks 1-4):** Auth + Testing Foundation *(core)*
+2. **Phase 2 (Weeks 5-8):** Payments + Financial Tracking *(core)*
+3. **Phase 3 (Weeks 9-12):** Real-time Features + Tenant Portal *(optional stretch goal)*
+4. **Phase 4 (Weeks 13-16):** Production Hardening + Launch Prep *(optional stretch goal)*
 
 ### State Transitions
-- **Current → Phase 1:** Single-user prototype → Multi-user authenticated app
-- **Phase 1 → Phase 2:** Auth foundation → Revenue-capable platform
-- **Phase 2 → Phase 3:** Payment processing → Feature-complete platform
-- **Phase 3 → Phase 4:** Complete features → Production SaaS
+- **Current → Phase 1:** Single-user prototype → Multi-user authenticated app with comprehensive testing
+- **Phase 1 → Phase 2:** Auth foundation → Payment integration and financial tracking
+- **Phase 2 → Phase 3:** Payment processing learned → Real-time communication and tenant features *(stretch)*
+- **Phase 3 → Phase 4:** Feature-complete → Production-hardened SaaS *(stretch)*
 
 ---
 
 ## Phase 1: Auth + Testing Foundation
-**Duration:** Weeks 1-4 (2 sprints)
+**Duration:** Weeks 1-4 (2 sprints, split into 3 sub-milestones)
 **Goal:** Enable multiple landlords to use the app independently with comprehensive test coverage
 
-### Sprint 1 (Weeks 1-2): Authentication Core
+### Sprint 1a: Database Migration + RLS Foundation
+
+**Why separate:** Migrating from SQLite to Postgres plus implementing Row Level Security policies is substantial work with a steep learning curve. RLS is security-critical and deserves focused attention before layering on OAuth complexity.
 
 **Features:**
 - Supabase project setup and configuration
-- User registration flow (email/password)
-- User login flow (email/password + Google OAuth)
-- Session management and JWT handling
-- Protected route middleware
-- User profile page (view/edit name, email, avatar)
-- Password reset flow
-
-**Database Changes:**
-- Migrate from SQLite to Supabase Postgres
+- Migrate schema from SQLite to Supabase Postgres
+- Migrate existing data (properties, demo data)
 - Add `user_id` column to `properties` table
-- Create Row Level Security (RLS) policies:
+- Create `profiles` table (extends Supabase auth.users)
+- Implement Row Level Security (RLS) policies:
   - Users can only SELECT/INSERT/UPDATE/DELETE their own properties
   - Users can only view their own profile
-- Create `profiles` table (extends Supabase auth.users)
+- Test RLS policies with multiple test users
 
 **Technical Implementation:**
-- Use Supabase Auth SDK (@supabase/supabase-js)
+- Export SQLite data, transform to Postgres-compatible format
+- Use Supabase SQL editor or migration files
+- RLS policies use `auth.uid()` to filter by current user
+- Test with multiple users to verify isolation
+
+**Success Criteria:**
+- ✅ All existing properties migrated to Postgres
+- ✅ RLS policies prevent cross-user data access
+- ✅ Test users cannot see each other's properties
+
+### Sprint 1b: Email/Password Authentication
+
+**Features:**
+- User registration flow (email/password)
+- User login flow (email/password only, OAuth deferred)
+- Session management and JWT handling
+- Protected route middleware (frontend + backend)
+- User profile page (view/edit name, email, avatar)
+- Password reset flow
+- Rate limiting on auth endpoints (5 requests/minute)
+
+**Technical Implementation:**
+- Supabase Auth SDK (@supabase/supabase-js)
 - Store session in localStorage with automatic refresh
-- Implement auth state management in frontend
-- Add auth middleware to Express API routes
-- RLS policies enforce data isolation at database level
+- Frontend auth state management
+- Express middleware to verify Supabase JWT
+- Rate limiting with express-rate-limit (security best practice from the start)
 
 **Success Criteria:**
 - ✅ Users can register with email/password
-- ✅ Users can log in with Google OAuth
+- ✅ Users can log in and sessions persist across page reloads
 - ✅ Users can reset forgotten passwords
 - ✅ Protected routes redirect to login when unauthenticated
 - ✅ Multiple users can create accounts and see only their own properties
-- ✅ RLS policies prevent data leakage between users
+- ✅ Rate limiting blocks brute-force login attempts
+
+**Note on OAuth:** Google OAuth is deferred to Sprint 2 or later. Email/password auth is sufficient to learn session management and test multi-user isolation. OAuth adds redirect flows and token exchange—valuable, but not critical for the foundation.
 
 ### Sprint 2 (Weeks 3-4): Testing Infrastructure
 
@@ -141,25 +189,48 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 - ✅ Tests run in <60 seconds locally
 - ✅ Clear test failure messages for debugging
 
+### Tenant Identity Model (Design Early)
+
+**The Problem:** Currently, tenants are just email strings on property records. In Phase 3, tenants become authenticated users with roles. How do you connect a tracked tenant (email on a property) to a logged-in tenant account?
+
+**Solution: Invite/Linking Flow**
+1. **Phase 1 data model:** Properties have `tenant_email` (string, nullable). No tenant accounts yet.
+2. **Phase 3 transition:** When a tenant registers/logs in:
+   - Check if their email matches any `tenant_email` in properties
+   - If match found, link that user account to those properties (add `tenant_id` column, populate from email match)
+   - Update RLS policies to grant tenants read access to their assigned properties
+3. **Invite flow (optional enhancement):**
+   - Landlord invites tenant by email → sends invite link
+   - Tenant clicks link → creates account with pre-filled email
+   - Account auto-links to property on creation
+
+**Why design this early:** The data model (email → user_id linking) affects the properties table schema and RLS policies built in Phase 1. Planning the transition now avoids painful refactoring later.
+
+**Implementation note:** Keep it simple in Phase 1—just ensure the schema supports adding `tenant_id` later. The actual linking logic can be implemented in Phase 3.
+
 ### Phase 1 Deliverables
-- Multi-user authentication system with OAuth
+- Multi-user authentication system (email/password, OAuth deferred)
 - Comprehensive test suite with CI/CD
 - Migrated to Supabase Postgres with RLS
 - Protected routes and data isolation
+- Rate limiting on auth endpoints (security built in from the start)
 - Test coverage reports in CI
 
 ### Phase 1 Technical Stack
-- **Auth:** Supabase Auth (email/password, Google OAuth)
+- **Auth:** Supabase Auth (email/password; OAuth can be added later)
 - **Database:** Supabase Postgres with Row Level Security
 - **Testing:** Vitest (unit/integration), Playwright (E2E)
 - **CI/CD:** GitHub Actions
 - **Frontend Auth:** @supabase/supabase-js client library
+- **Security:** express-rate-limit (practice "build it in" from day one, not for production risk)
+
+**Note on Security Timing:** Rate limiting and other security measures are implemented early to establish good habits (security by default), not because there's production risk with no real users. This teaches you to build secure systems from the start, which is far easier than retrofitting security later.
 
 ---
 
 ## Phase 2: Payments + Financial Tracking
 **Duration:** Weeks 5-8 (2 sprints)
-**Goal:** Enable revenue generation through subscriptions and comprehensive financial tracking
+**Goal:** Master payment processing (Stripe integration, webhooks, subscription state) and implement financial tracking features
 
 ### Sprint 3 (Weeks 5-6): Stripe Integration
 
@@ -175,6 +246,8 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 - **Free:** 3 properties, basic features, community support
 - **Pro ($15/month):** 25 properties, financial reports, priority support
 - **Enterprise ($50/month):** Unlimited properties, advanced analytics, API access
+
+**Note:** These tiers exist to practice building tiered pricing, enforcing limits, and handling subscription state—not to generate actual revenue. Stripe test mode is sufficient; real billing is optional.
 
 **Database Changes:**
 - Create `subscriptions` table:
@@ -228,12 +301,14 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 
 **Technical Implementation:**
 - Financial calculations in backend (never client-side)
-- Chart.js or Recharts for financial graphs
+- Chart.js for financial graphs (vanilla JS compatible; Recharts is React-only)
 - Scheduled job (cron) for payment reminders:
   - Check for rent due within 3 days
   - Send email via Resend to tenants
 - CSV generation with proper escaping
 - Currency formatting (always store as cents/smallest unit)
+
+**Note on Vanilla JS:** Staying vanilla through Phase 2 (and even Phase 3's real-time work) is deliberate. Hitting the limits of vanilla JS—especially when managing real-time state updates—and *then* adopting a framework is a key learning experience. You'll understand why frameworks exist because you've felt the pain they solve.
 
 **Success Criteria:**
 - ✅ Landlords can log rent payments and expenses
@@ -253,7 +328,7 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 ### Phase 2 Technical Stack
 - **Payments:** Stripe API, Stripe Checkout, Stripe Webhooks
 - **Scheduled Jobs:** Node-cron or Vercel Cron
-- **Charts:** Chart.js or Recharts
+- **Charts:** Chart.js (vanilla JS compatible)
 - **CSV:** papaparse or custom CSV generator
 
 ---
@@ -360,7 +435,9 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 **Duration:** Weeks 13-16 (2 sprints)
 **Goal:** Production-ready infrastructure with monitoring, security, and performance optimization
 
-### Sprint 7 (Weeks 13-14): Multi-tenancy & Analytics
+### Sprint 7 (Weeks 13-14): Analytics, Performance & Monitoring
+
+**Note:** Multi-tenancy is already handled by Row Level Security policies from Phase 1. This sprint focuses on analytics, performance optimization, and production monitoring.
 
 **Features:**
 - Analytics dashboard (properties, revenue, tenants, requests)
@@ -368,8 +445,7 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 - Performance monitoring setup
 - Error tracking and alerting
 - Database query optimization
-- Rate limiting on public endpoints
-- Advanced RLS policy audit
+- Advanced RLS policy audit and penetration testing
 
 **Analytics Metrics:**
 - Portfolio overview: total properties, total revenue, total expenses
@@ -385,18 +461,14 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
   - rent_payments(property_id, payment_date)
   - expenses(property_id, expense_date)
   - messages(recipient_id, read_at)
-- Rate limiting with express-rate-limit:
-  - Auth endpoints: 5 requests/minute
-  - Payment endpoints: 10 requests/minute
-  - API endpoints: 100 requests/minute
 - RLS policy review and penetration testing
 - Query performance analysis (EXPLAIN ANALYZE)
+- Load testing preparation (tools setup, baseline metrics)
 
 **Success Criteria:**
 - ✅ Analytics dashboard shows real-time metrics
 - ✅ All critical queries execute in <200ms
 - ✅ Sentry captures and reports errors automatically
-- ✅ Rate limiting blocks abusive requests
 - ✅ RLS policies verified secure (no cross-user data leaks)
 - ✅ Database indexes improve query performance by >50%
 
@@ -419,7 +491,7 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 - SQL injection prevention verified (parameterized queries)
 - XSS protection (Content Security Policy headers)
 - CSRF protection on forms
-- Rate limiting on all public endpoints
+- Rate limiting verified working (already implemented in Phase 1)
 - Database daily backups to S3 or Supabase backup service
 - Error monitoring with Sentry alerts
 - Uptime monitoring (UptimeRobot or Vercel Analytics)
@@ -437,14 +509,14 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 - Marketing site with benefits, pricing, testimonials
 
 **Success Criteria:**
-- ✅ App handles 100 concurrent users without degradation
+- ✅ App handles 100 concurrent users without degradation (load tested)
 - ✅ All OWASP Top 10 vulnerabilities addressed
 - ✅ Zero-downtime deployments working reliably
 - ✅ Database backups tested and restorable
-- ✅ Monitoring catches issues before users report them
-- ✅ First paying customer can successfully sign up and use all features
+- ✅ Monitoring catches and alerts on errors automatically
+- ✅ Test users can complete full signup → usage → subscription flows
 - ✅ API documentation complete and accurate
-- ✅ Marketing landing page converts visitors to signups
+- ✅ *(Optional)* Landing page ready if pursuing real users
 
 ### Phase 4 Deliverables
 - Production-grade monitoring and error tracking
@@ -469,26 +541,27 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 - 3+ test users can independently manage properties
 - Test coverage >80% on critical paths
 - All tests pass in CI/CD pipeline
-- Email/password and OAuth login both functional
+- Email/password auth working (OAuth deferred to later)
+- RLS policies prevent cross-user data leaks
 
 ### Phase 2 Success
-- First paying subscriber (Pro or Enterprise plan)
+- Test users can subscribe to Pro/Enterprise plans (Stripe test mode)
 - Stripe webhooks update subscription status correctly
 - Financial reports show accurate calculations
 - Payment reminders sent automatically
 
-### Phase 3 Success
+### Phase 3 Success *(stretch goal)*
 - Messages deliver in real-time (<500ms)
 - Tenants submit maintenance requests with photos
 - Push notifications work on desktop and mobile
 - Tenant portal fully functional on mobile devices
 
-### Phase 4 Success
-- App stable with 100+ concurrent users
+### Phase 4 Success *(stretch goal)*
+- App stable with 100+ concurrent users (load tested)
 - Zero critical security vulnerabilities
 - <2s average page load time
-- 99.9% uptime in production
-- First 10 paying customers using the platform
+- Monitoring and alerting fully operational
+- *(Optional)* Platform ready for real users if pursued
 
 ## Risk Mitigation
 
@@ -502,10 +575,10 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 - **Learning curve:** Allocate 20% time buffer per sprint for learning new technologies
 - **Scope creep:** Stick to roadmap, defer new ideas to Phase 5 (post-launch iterations)
 
-### Business Risks
-- **No users:** Launch with free tier, gather feedback, iterate quickly
-- **Competition:** Focus on quality and user experience, not feature parity
-- **Pricing wrong:** Start conservative ($15/mo), adjust based on customer feedback
+### Learning Risks
+- **Burnout from overcommitment:** Remember Phases 3-4 are stretch goals; two phases done deeply is success
+- **Tutorial hell:** Balance learning from docs/courses with hands-on building; make mistakes and debug them
+- **Perfectionism:** Ship working code over perfect code; refactor later with knowledge gained
 
 ## Post-Launch (Phase 5+)
 
@@ -523,11 +596,11 @@ Transform Dwello from a single-user prototype into a production-ready SaaS prope
 
 ## Conclusion
 
-This roadmap transforms Dwello from a prototype into a production SaaS platform in 16 focused weeks. Each phase builds essential skills while delivering tangible value. By Phase 4, you'll have:
+This roadmap transforms Dwello from a prototype into a learning platform for mastering full-stack SaaS development. **The primary goal is learning**, not shipping a business. Each phase teaches essential technologies through hands-on building. Even completing just Phases 1-2 deeply will give you:
 
-- Deep expertise in auth, payments, real-time features, and production infrastructure
-- A revenue-generating SaaS product ready for customers
-- A portfolio project demonstrating full-stack mastery
-- Foundation for future iterations and business growth
+- **Deep expertise** in authentication (sessions, JWTs, RLS policies) and payment processing (Stripe webhooks, subscription state)
+- **Production habits** built in from the start: testing, security by default, CI/CD, monitoring
+- **A portfolio-grade project** demonstrating full-stack mastery with real complexity
+- **Foundation for any SaaS idea** you pursue in the future (these patterns transfer)
 
-The sprint-focused cadence ensures momentum while allowing time for learning. Testing and quality are built in from Phase 1, establishing patterns that scale. By the end, Dwello will be a showcase of modern SaaS development practices.
+Remember: **finishing two phases deeply beats rushing through four**. Phases 3-4 are stretch goals. The sprint-focused cadence ensures momentum while allowing time for mistakes, debugging, and deep understanding. By the end, you'll understand why frameworks exist, how payments really work, and what "production-ready" actually means—knowledge that transfers to any stack or project.
