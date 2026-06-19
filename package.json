@@ -8,7 +8,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "npm run build:css",
+    "build": "npm run build:css && node scripts/build-public.mjs",
     "prestart": "npm run build:css",
     "start": "node server/app.mjs",
     "dev": "nodemon server/app.mjs",

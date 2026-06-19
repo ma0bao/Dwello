@@ -40,3 +40,4 @@ Thumbs.db
 # Build files
 dist/
 build/
+public/
