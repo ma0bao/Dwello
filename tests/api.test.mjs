@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import sendEmailHandler from '../api/send-email.js';
+
 const PORT = 45100;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
 
@@ -27,6 +29,31 @@ async function postJson(path, body) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
   });
+}
+
+function createMockResponse() {
+  return {
+    statusCode: 200,
+    headers: {},
+    body: undefined,
+    ended: false,
+    setHeader(name, value) {
+      this.headers[name.toLowerCase()] = value;
+    },
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(body) {
+      this.body = body;
+      this.ended = true;
+      return this;
+    },
+    end() {
+      this.ended = true;
+      return this;
+    }
+  };
 }
 
 test('properties API lists seeded demo properties and creates persisted properties', async (t) => {
@@ -235,6 +262,32 @@ test('email API returns JSON when email credentials are missing', async (t) => {
   const body = await response.json();
   assert.equal(body.error, 'Email service is not configured');
   assert.deepEqual(body.required, ['GMAIL_USER', 'GMAIL_APP_PASSWORD']);
+});
+
+test('Vercel email function returns JSON when email credentials are missing', async () => {
+  const previousUser = process.env.GMAIL_USER;
+  const previousPassword = process.env.GMAIL_APP_PASSWORD;
+  delete process.env.GMAIL_USER;
+  delete process.env.GMAIL_APP_PASSWORD;
+
+  const res = createMockResponse();
+  await sendEmailHandler({
+    method: 'POST',
+    body: {
+      to: 'tenant@example.com',
+      subject: 'Lease update',
+      message: 'Hello tenant'
+    }
+  }, res);
+
+  if (previousUser === undefined) delete process.env.GMAIL_USER;
+  else process.env.GMAIL_USER = previousUser;
+  if (previousPassword === undefined) delete process.env.GMAIL_APP_PASSWORD;
+  else process.env.GMAIL_APP_PASSWORD = previousPassword;
+
+  assert.equal(res.statusCode, 503);
+  assert.equal(res.body.error, 'Email service is not configured');
+  assert.deepEqual(res.body.required, ['GMAIL_USER', 'GMAIL_APP_PASSWORD']);
 });
 
 test('properties API validates required property fields', async (t) => {

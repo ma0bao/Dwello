@@ -14,7 +14,7 @@
     "dev": "nodemon server/app.mjs",
     "build:css": "cross-env BROWSERSLIST_IGNORE_OLD_DATA=1 tailwindcss -c tailwind.config.cjs -i ./src/styles.css -o ./dist/styles.css --minify",
     "watch:css": "cross-env BROWSERSLIST_IGNORE_OLD_DATA=1 tailwindcss -c tailwind.config.cjs -i ./src/styles.css -o ./dist/styles.css --watch",
-    "check": "npm run build:css && node --check server/app.mjs && node --check server/db/database.mjs && node --check server/db/seed.mjs && node --check server/routes/properties.mjs && node --check src/bootstrap.js && node --check src/app.js && node --check tests/api.test.mjs",
+    "check": "npm run build:css && node --check server/app.mjs && node --check server/db/database.mjs && node --check server/db/seed.mjs && node --check server/routes/properties.mjs && node --check api/send-email.js && node --check src/bootstrap.js && node --check src/app.js && node --check tests/api.test.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "keywords": [
