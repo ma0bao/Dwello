@@ -24,6 +24,11 @@ router.put('/', requireAuth, async (req, res) => {
   if (full_name !== undefined && (typeof full_name !== 'string' || full_name.trim().length === 0)) {
     return res.status(400).json({ error: 'full_name must be a non-empty string' });
   }
+  if (avatar_url !== undefined && avatar_url !== null) {
+    if (typeof avatar_url !== 'string' || avatar_url.length > 2048 || !avatar_url.startsWith('https://')) {
+      return res.status(400).json({ error: 'avatar_url must be a valid https:// URL under 2048 characters' });
+    }
+  }
 
   const db = createUserClient(req.userToken);
   const { data, error } = await db

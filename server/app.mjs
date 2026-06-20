@@ -8,6 +8,7 @@ import { rateLimit } from 'express-rate-limit';
 
 import propertiesRouter from './routes/properties.mjs';
 import profileRouter from './routes/profile.mjs';
+import { requireAuth } from './middleware/auth.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -76,7 +77,7 @@ app.get('/api/config', (req, res) => {
 app.use('/api/properties', propertiesRouter);
 app.use('/api/profile', profileRouter);
 
-app.post('/api/send-email', async (req, res) => {
+app.post('/api/send-email', requireAuth, async (req, res) => {
   if (!resend) {
     return res.status(503).json({
       error: 'Email service is not configured',
@@ -120,8 +121,6 @@ app.post('/api/send-email', async (req, res) => {
         </div>
       `
     });
-
-    console.log('Resend response:', JSON.stringify(data, null, 2));
 
     if (data.error) {
       console.error('Resend API error:', data.error);
