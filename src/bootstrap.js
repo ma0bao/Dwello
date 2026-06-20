@@ -1,5 +1,8 @@
 const viewPartials = [
   '/src/views/chrome.html',
+  '/src/views/login.html',
+  '/src/views/register.html',
+  '/src/views/reset-password.html',
   '/src/views/landing.html',
   '/src/views/landlord.html',
   '/src/views/tenant.html',
@@ -29,6 +32,7 @@ async function bootstrapDwello() {
   const root = document.getElementById('app-root');
   const html = await Promise.all(viewPartials.map(fetchPartial));
   root.innerHTML = html.join('\n');
+  await loadClassicScript('/src/auth.js');
   await loadClassicScript('/src/app.js');
 }
 
