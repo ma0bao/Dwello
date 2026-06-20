@@ -1,61 +1,62 @@
 <!-- ═══════════════════════════════════════════
      VIEW: LOGIN
 ════════════════════════════════════════════ -->
-<div id="view-login" class="view" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--forest) 0%,#2D6A4F 50%,#40916C 100%);padding:32px;">
-  <div style="width:100%;max-width:420px;">
-    <!-- Logo -->
-    <div style="text-align:center;margin-bottom:32px;">
-      <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:var(--offwhite);letter-spacing:-0.03em;">Dwello</div>
-      <div style="font-size:14px;color:rgba(248,246,241,0.6);margin-top:6px;">Property management, simplified.</div>
-    </div>
+<div id="view-login" class="view">
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--forest) 0%,#2D6A4F 50%,#40916C 100%);padding:32px;">
+    <div style="width:100%;max-width:420px;">
 
-    <!-- Card -->
-    <div style="background:var(--offwhite);border-radius:20px;padding:36px;box-shadow:0 24px 64px rgba(0,0,0,0.2);">
-      <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:var(--forest);margin:0 0 8px;">Welcome back</h2>
-      <p style="font-size:14px;color:rgba(26,36,32,0.6);margin:0 0 28px;">Sign in to your account</p>
+      <!-- Logo -->
+      <div style="text-align:center;margin-bottom:32px;">
+        <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:var(--offwhite);letter-spacing:-0.03em;">Dwello</div>
+        <div style="font-size:14px;color:rgba(248,246,241,0.6);margin-top:6px;">Property management, simplified.</div>
+      </div>
 
-      <form id="login-form" onsubmit="handleLogin(event)" novalidate>
-        <!-- Error banner -->
-        <div id="login-error" style="display:none;background:rgba(217,83,79,0.1);color:#B91C1C;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:20px;"></div>
+      <!-- Card -->
+      <div class="shadow-forest" style="background:var(--offwhite);border-radius:20px;padding:36px;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:24px;color:var(--forest);margin:0 0 8px;">Welcome back</h2>
+        <p style="font-size:14px;color:rgba(26,36,32,0.6);margin:0 0 28px;">Sign in to your account</p>
 
-        <!-- Email -->
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--slate);margin-bottom:6px;">Email address</label>
-          <input id="login-email" type="email" autocomplete="email" placeholder="you@example.com"
-            style="width:100%;box-sizing:border-box;padding:12px 16px;border:1.5px solid rgba(27,67,50,0.2);border-radius:10px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--slate);background:#fff;outline:none;transition:border-color 0.15s;"
-            onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='rgba(27,67,50,0.2)'" />
-        </div>
+        <form id="login-form" onsubmit="handleLogin(event)" novalidate>
 
-        <!-- Password -->
-        <div style="margin-bottom:8px;">
-          <label style="display:block;font-size:13px;font-weight:600;color:var(--slate);margin-bottom:6px;">Password</label>
-          <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••"
-            style="width:100%;box-sizing:border-box;padding:12px 16px;border:1.5px solid rgba(27,67,50,0.2);border-radius:10px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--slate);background:#fff;outline:none;transition:border-color 0.15s;"
-            onfocus="this.style.borderColor='var(--sage)'" onblur="this.style.borderColor='rgba(27,67,50,0.2)'" />
-        </div>
+          <!-- Error banner -->
+          <div id="login-error" style="display:none;background:rgba(217,83,79,0.1);color:#B91C1C;padding:12px 16px;border-radius:10px;font-size:14px;margin-bottom:20px;"></div>
 
-        <!-- Forgot password -->
-        <div style="text-align:right;margin-bottom:24px;">
-          <button type="button" onclick="showView('reset-password')"
-            style="background:none;border:none;padding:0;font-size:13px;color:var(--sage);cursor:pointer;font-family:'DM Sans',sans-serif;">
-            Forgot password?
+          <!-- Email -->
+          <div style="margin-bottom:16px;">
+            <label class="form-label" for="login-email">Email address</label>
+            <input id="login-email" class="form-input" type="email" autocomplete="email" placeholder="you@example.com" />
+          </div>
+
+          <!-- Password -->
+          <div style="margin-bottom:8px;">
+            <label class="form-label" for="login-password">Password</label>
+            <input id="login-password" class="form-input" type="password" autocomplete="current-password" placeholder="••••••••" />
+          </div>
+
+          <!-- Forgot password -->
+          <div style="text-align:right;margin-bottom:24px;">
+            <button type="button" onclick="showView('reset-password')"
+              style="background:none;border:none;padding:0;font-size:13px;color:var(--sage);cursor:pointer;font-family:'DM Sans',sans-serif;">
+              Forgot password?
+            </button>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" id="login-submit" class="btn-primary" style="width:100%;justify-content:center;">
+            Sign in
           </button>
-        </div>
 
-        <!-- Submit -->
-        <button type="submit" id="login-submit" class="btn-primary" style="width:100%;padding:14px;font-size:15px;justify-content:center;">
-          Sign in
-        </button>
+          <!-- Register link -->
+          <p style="text-align:center;font-size:14px;color:rgba(26,36,32,0.6);margin:20px 0 0;">
+            Don't have an account?
+            <button type="button" onclick="showView('register')"
+              style="background:none;border:none;padding:0;font-size:14px;color:var(--sage);font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
+              Sign up
+            </button>
+          </p>
 
-        <!-- Register link -->
-        <p style="text-align:center;font-size:14px;color:rgba(26,36,32,0.6);margin:20px 0 0;">
-          Don't have an account?
-          <button type="button" onclick="showView('register')"
-            style="background:none;border:none;padding:0;font-size:14px;color:var(--sage);font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">
-            Sign up
-          </button>
-        </p>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 </div>

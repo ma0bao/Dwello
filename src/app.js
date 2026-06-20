@@ -767,12 +767,9 @@ async function sendTenantEmail(e) {
   statusEl.textContent = 'Sending email to ' + tenant.name + '...';
 
   try {
-    // Call backend API
-    const response = await fetch('/api/send-email', {
+    await requestJson('/api/send-email', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         to: tenant.email,
         subject: subject,
@@ -783,27 +780,20 @@ async function sendTenantEmail(e) {
       })
     });
 
-    const result = await parseApiResponse(response);
+    // Success state
+    statusEl.style.background = 'rgba(183,228,199,0.3)';
+    statusEl.style.color = 'var(--forest)';
+    statusEl.textContent = '✓ Email sent to ' + tenant.name;
 
-    if (response.ok && result.success) {
-      // Success state
-      statusEl.style.background = 'rgba(183,228,199,0.3)';
-      statusEl.style.color = 'var(--forest)';
-      statusEl.textContent = '✓ Email sent to ' + tenant.name;
+    // Reset button
+    sendBtn.disabled = false;
+    sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> Send Email';
 
-      // Reset button
-      sendBtn.disabled = false;
-      sendBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg> Send Email';
-
-      // Close modal and show toast
-      setTimeout(() => {
-        closeEmailModal();
-        showToast('Email sent to ' + tenant.name);
-      }, 1500);
-
-    } else {
-      throw new Error(result.error || 'Failed to send email');
-    }
+    // Close modal and show toast
+    setTimeout(() => {
+      closeEmailModal();
+      showToast('Email sent to ' + tenant.name);
+    }, 1500);
 
   } catch (error) {
     console.warn('Email send failed:', error.message);
@@ -1235,6 +1225,15 @@ async function submitAddProperty(e) {
 // ═══════════════════════════════
 // INIT
 // ═══════════════════════════════
+function updateSidebarUser(session) {
+  const name = session?.user?.user_metadata?.full_name || session?.user?.email || 'Landlord';
+  const initial = name.charAt(0).toUpperCase();
+  const nameEl = document.getElementById('sidebar-user-name');
+  const avatarEl = document.getElementById('sidebar-user-avatar');
+  if (nameEl) nameEl.textContent = name;
+  if (avatarEl) avatarEl.textContent = initial;
+}
+
 async function initializeApp() {
   const session = await window.dwelloAuth.init();
 
@@ -1246,6 +1245,7 @@ async function initializeApp() {
       document.getElementById('reset-new-password-card').style.display = 'block';
       showView('reset-password');
     } else if (event === 'SIGNED_IN' && document.getElementById('view-login').classList.contains('active')) {
+      updateSidebarUser(session);
       loadPropertiesFromApi().then(() => renderThread(0));
       showView('landlord');
     }
@@ -1256,6 +1256,7 @@ async function initializeApp() {
     return;
   }
 
+  updateSidebarUser(session);
   await loadPropertiesFromApi();
   renderThread(0);
   showView('landlord');
@@ -1281,7 +1282,11 @@ async function handleLogin(e) {
   submitBtn.textContent = 'Sign in';
 
   if (error) {
-    errorEl.textContent = error.message;
+    let msg = error.message;
+    if (msg.toLowerCase().includes('not confirmed')) {
+      msg = 'Please confirm your email before signing in. Check your inbox for a confirmation link.';
+    }
+    errorEl.textContent = msg;
     errorEl.style.display = 'block';
   }
   // onAuthStateChange fires automatically on success
