@@ -229,7 +229,9 @@ const demoApiProperties = [
     rent: 1950,
     estimatedValue: 395000,
     squareFeet: 1650,
-    photoUrl: 'https://placehold.co/400x200/40916C/F8F6F1?text=331+Lakeview+Dr'
+    photoUrl: 'https://placehold.co/400x200/40916C/F8F6F1?text=331+Lakeview+Dr',
+    leaseStart: '2023-06-01',
+    leaseEnd: '2024-05-31'
   },
   {
     id: 2,
@@ -242,7 +244,9 @@ const demoApiProperties = [
     rent: 2800,
     estimatedValue: 620000,
     squareFeet: 2100,
-    photoUrl: 'https://placehold.co/400x200/D4A853/1A2420?text=78+Birchwood+Ave'
+    photoUrl: 'https://placehold.co/400x200/D4A853/1A2420?text=78+Birchwood+Ave',
+    leaseStart: '2024-03-01',
+    leaseEnd: '2025-02-28'
   },
   {
     id: 1,
@@ -255,7 +259,9 @@ const demoApiProperties = [
     rent: 2200,
     estimatedValue: 485000,
     squareFeet: 1850,
-    photoUrl: 'https://placehold.co/400x200/2D6A4F/B7E4C7?text=142+Maple+St'
+    photoUrl: 'https://placehold.co/400x200/2D6A4F/B7E4C7?text=142+Maple+St',
+    leaseStart: '2024-01-01',
+    leaseEnd: '2024-12-31'
   }
 ];
 
@@ -299,6 +305,8 @@ function mapApiPropertyToCard(property, index) {
     estimatedValue: property.estimatedValue,
     squareFeet: property.squareFeet,
     photoUrl: property.photoUrl,
+    leaseStart: property.leaseStart,
+    leaseEnd: property.leaseEnd,
     tenant,
     initials: initialsFromName(tenant),
     value: formatCurrency(property.estimatedValue),
@@ -317,6 +325,9 @@ function createApiUnavailableError(message) {
 }
 
 async function requestJson(endpoint, options = {}) {
+  const authHeaders = window.dwelloAuth?.getAuthHeader() || {};
+  options.headers = { ...authHeaders, ...(options.headers || {}) };
+
   let response;
   try {
     response = await fetch(endpoint, options);
@@ -394,10 +405,65 @@ function deleteLocalProperty(id) {
   writeLocalProperties(nextProperties);
 }
 
+function syncTenantsFromProperties(apiProperties) {
+  const gradients = [
+    'linear-gradient(135deg,#B7E4C7,#40916C)',
+    'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))',
+    'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))',
+    'linear-gradient(135deg,var(--mint),var(--sage))'
+  ];
+  const colors = ['#1B4332', '#8B6914', '#1B4332', '#1B4332'];
+
+  threads.length = 0;
+
+  apiProperties.forEach((property, index) => {
+    if (property.tenantName && property.tenantEmail) {
+      const gradIndex = index % gradients.length;
+      threads.push({
+        name: property.tenantName,
+        initials: initialsFromName(property.tenantName),
+        email: property.tenantEmail,
+        property: `${property.address}, ${property.city} ${property.state}`,
+        avatarGrad: gradients[gradIndex],
+        avatarColor: colors[gradIndex],
+        messages: []
+      });
+    }
+  });
+}
+
+function renderTenantTable() {
+  const tbody = document.getElementById('tenant-table-body');
+  if (!tbody) return;
+
+  tbody.innerHTML = threads.map((tenant, index) => {
+    const property = properties.find(p => p.tenantEmail === tenant.email);
+    const leaseStartDisplay = property?.leaseStart ? formatDate(property.leaseStart) : '-';
+    const leaseEndDisplay = property?.leaseEnd ? formatDate(property.leaseEnd) : '-';
+
+    return `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:${tenant.avatarGrad};display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:${tenant.avatarColor};">${tenant.initials}</div>
+            <span style="font-weight:500;">${tenant.name}</span>
+          </div>
+        </td>
+        <td style="color:rgba(26,36,32,0.65);">${tenant.property}</td>
+        <td><span class="chip chip-mint">${leaseStartDisplay}</span></td>
+        <td><span class="chip chip-gold">${leaseEndDisplay}</span></td>
+        <td><button class="btn-primary btn-sm" onclick="openEmailModal(${index})">Contact</button></td>
+      </tr>
+    `;
+  }).join('');
+}
+
 function renderPropertiesFromApi(apiProperties) {
   properties.splice(0, properties.length, ...apiProperties.map(mapApiPropertyToCard));
+  syncTenantsFromProperties(apiProperties);
   renderPropertyCards('#dashboard-cards-grid', true);
   renderPropertyCards('#properties-cards-grid', false);
+  renderTenantTable();
   updatePortfolioStats();
 }
 
@@ -857,6 +923,8 @@ function openEditPropertyModal(id) {
   setInputValue('ap-rent', property.rentAmount ? property.rentAmount.toLocaleString('en-US') : '');
   setInputValue('ap-tenant-name', property.tenantName || '');
   setInputValue('ap-tenant-email', property.tenantEmail || '');
+  setInputValue('ap-lease-start', property.leaseStart || '');
+  setInputValue('ap-lease-end', property.leaseEnd || '');
 
   if (property.photoUrl) {
     setPhotoMode('url');
@@ -883,9 +951,21 @@ async function deleteProperty(id) {
     }
 
     const index = properties.findIndex(item => item.id === id);
-    if (index !== -1) properties.splice(index, 1);
+    if (index !== -1) {
+      const deletedProperty = properties[index];
+      properties.splice(index, 1);
+
+      // Remove tenant from threads
+      const threadIndex = threads.findIndex(t => t.email === deletedProperty.tenantEmail);
+      if (threadIndex !== -1) {
+        threads.splice(threadIndex, 1);
+        if (activeThread >= threads.length) activeThread = Math.max(0, threads.length - 1);
+      }
+    }
+
     renderPropertyCards('#dashboard-cards-grid', true);
     renderPropertyCards('#properties-cards-grid', false);
+    renderTenantTable();
     updatePortfolioStats();
     showToast('Property deleted.', '#40916C');
   } catch (error) {
@@ -894,9 +974,21 @@ async function deleteProperty(id) {
         propertyPersistenceMode = 'local';
         deleteLocalProperty(id);
         const index = properties.findIndex(item => item.id === id);
-        if (index !== -1) properties.splice(index, 1);
+        if (index !== -1) {
+          const deletedProperty = properties[index];
+          properties.splice(index, 1);
+
+          // Remove tenant from threads
+          const threadIndex = threads.findIndex(t => t.email === deletedProperty.tenantEmail);
+          if (threadIndex !== -1) {
+            threads.splice(threadIndex, 1);
+            if (activeThread >= threads.length) activeThread = Math.max(0, threads.length - 1);
+          }
+        }
+
         renderPropertyCards('#dashboard-cards-grid', true);
         renderPropertyCards('#properties-cards-grid', false);
+        renderTenantTable();
         updatePortfolioStats();
         showToast('Property deleted from this browser.', '#40916C');
         return;
@@ -1019,7 +1111,9 @@ async function submitAddProperty(e) {
     rent: rentNum,
     estimatedValue: valueNum,
     squareFeet: sqftNum,
-    photoUrl: photoSrc
+    photoUrl: photoSrc,
+    leaseStart: leaseStart || null,
+    leaseEnd: leaseEnd || null
   };
 
   let savedProperty;
@@ -1059,9 +1153,41 @@ async function submitAddProperty(e) {
 
   if (isEditingProperty()) {
     const index = properties.findIndex(property => property.id === editingPropertyId);
-    if (index !== -1) properties[index] = mapApiPropertyToCard(savedProperty, index);
+    if (index !== -1) {
+      const oldProperty = properties[index];
+      properties[index] = mapApiPropertyToCard(savedProperty, index);
+
+      // Update tenant in threads
+      const threadIndex = threads.findIndex(t => t.email === oldProperty.tenantEmail);
+      const gradients = [
+        'linear-gradient(135deg,#B7E4C7,#40916C)',
+        'linear-gradient(135deg,rgba(212,168,83,0.3),rgba(212,168,83,0.7))',
+        'linear-gradient(135deg,rgba(27,67,50,0.15),rgba(27,67,50,0.35))',
+        'linear-gradient(135deg,var(--mint),var(--sage))'
+      ];
+      const colors = ['#1B4332', '#8B6914', '#1B4332', '#1B4332'];
+      const gradIndex = threadIndex >= 0 ? threadIndex % gradients.length : threads.length % gradients.length;
+
+      const updatedThread = {
+        name: tenantName,
+        initials: initials,
+        email: tenantEmail,
+        property: address + ', ' + city + ' ' + state,
+        avatarGrad: gradients[gradIndex],
+        avatarColor: colors[gradIndex],
+        messages: threadIndex >= 0 ? threads[threadIndex].messages : []
+      };
+
+      if (threadIndex >= 0) {
+        threads[threadIndex] = updatedThread;
+      } else {
+        threads.push(updatedThread);
+      }
+    }
+
     renderPropertyCards('#dashboard-cards-grid', true);
     renderPropertyCards('#properties-cards-grid', false);
+    renderTenantTable();
     updatePortfolioStats();
     closeAddPropertyModal();
     showToast(savedLocally ? 'Property updated in this browser.' : 'Property updated successfully.', '#40916C');
@@ -1091,32 +1217,10 @@ async function submitAddProperty(e) {
     messages: []
   });
 
-  const newThreadIndex = threads.length - 1;
-
-  // Re-render property cards
+  // Re-render property cards and tenant table
   renderPropertyCards('#dashboard-cards-grid', true);
   renderPropertyCards('#properties-cards-grid', false);
-
-  // Add tenant row to directory
-  const tbody = document.getElementById('tenant-table-body');
-  if (tbody) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--mint),var(--sage));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:var(--forest);">${initials}</div>
-          <span style="font-weight:500;">${tenantName}</span>
-        </div>
-      </td>
-      <td style="color:rgba(26,36,32,0.65);">${address}, ${city} ${state}</td>
-      <td><span class="chip chip-mint">${formatDate(leaseStart)}</span></td>
-      <td><span class="chip chip-gold">${formatDate(leaseEnd)}</span></td>
-      <td><button class="btn-primary btn-sm" onclick="openEmailModal(${newThreadIndex})">Contact</button></td>
-    `;
-    tbody.appendChild(row);
-  }
-
-  // Update stat counts
+  renderTenantTable();
   updatePortfolioStats();
 
   // Close and reset modal
@@ -1132,8 +1236,141 @@ async function submitAddProperty(e) {
 // INIT
 // ═══════════════════════════════
 async function initializeApp() {
+  const session = await window.dwelloAuth.init();
+
+  window.dwelloAuth.onAuthChange((event, session) => {
+    if (event === 'SIGNED_OUT') {
+      showView('login');
+    } else if (event === 'PASSWORD_RECOVERY') {
+      document.getElementById('reset-request-card').style.display = 'none';
+      document.getElementById('reset-new-password-card').style.display = 'block';
+      showView('reset-password');
+    } else if (event === 'SIGNED_IN' && document.getElementById('view-login').classList.contains('active')) {
+      loadPropertiesFromApi().then(() => renderThread(0));
+      showView('landlord');
+    }
+  });
+
+  if (!session) {
+    showView('login');
+    return;
+  }
+
   await loadPropertiesFromApi();
   renderThread(0);
+  showView('landlord');
+}
+
+// ═══════════════════════════════
+// AUTH FORM HANDLERS
+// ═══════════════════════════════
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errorEl = document.getElementById('login-error');
+  const submitBtn = document.getElementById('login-submit');
+
+  errorEl.style.display = 'none';
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Signing in...';
+
+  const { error } = await window.dwelloAuth.signIn(email, password);
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Sign in';
+
+  if (error) {
+    errorEl.textContent = error.message;
+    errorEl.style.display = 'block';
+  }
+  // onAuthStateChange fires automatically on success
+}
+
+async function handleRegister(e) {
+  e.preventDefault();
+  const name = document.getElementById('register-name').value.trim();
+  const email = document.getElementById('register-email').value.trim();
+  const password = document.getElementById('register-password').value;
+  const errorEl = document.getElementById('register-error');
+  const successEl = document.getElementById('register-success');
+  const submitBtn = document.getElementById('register-submit');
+
+  errorEl.style.display = 'none';
+  successEl.style.display = 'none';
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creating account...';
+
+  if (password.length < 8) {
+    errorEl.textContent = 'Password must be at least 8 characters.';
+    errorEl.style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Create account';
+    return;
+  }
+
+  const { error } = await window.dwelloAuth.signUp(email, password, name);
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Create account';
+
+  if (error) {
+    errorEl.textContent = error.message;
+    errorEl.style.display = 'block';
+  } else {
+    successEl.textContent = 'Account created! Check your email to confirm, then sign in.';
+    successEl.style.display = 'block';
+    document.getElementById('register-form').reset();
+  }
+}
+
+async function handleResetRequest(e) {
+  e.preventDefault();
+  const email = document.getElementById('reset-email').value.trim();
+  const errorEl = document.getElementById('reset-request-error');
+  const successEl = document.getElementById('reset-request-success');
+
+  errorEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  const { error } = await window.dwelloAuth.resetPasswordForEmail(email);
+
+  if (error) {
+    errorEl.textContent = error.message;
+    errorEl.style.display = 'block';
+  } else {
+    successEl.textContent = 'Reset link sent! Check your email inbox.';
+    successEl.style.display = 'block';
+  }
+}
+
+async function handleSetNewPassword(e) {
+  e.preventDefault();
+  const newPassword = document.getElementById('reset-new-password').value;
+  const errorEl = document.getElementById('reset-new-error');
+
+  errorEl.style.display = 'none';
+
+  if (newPassword.length < 8) {
+    errorEl.textContent = 'Password must be at least 8 characters.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  const { error } = await window.dwelloAuth.updatePassword(newPassword);
+
+  if (error) {
+    errorEl.textContent = error.message;
+    errorEl.style.display = 'block';
+  } else {
+    showToast('Password updated! Signing you in...');
+    setTimeout(() => showView('landlord'), 1500);
+  }
+}
+
+async function handleLogout() {
+  await window.dwelloAuth.signOut();
+  // onAuthStateChange fires SIGNED_OUT which calls showView('login')
 }
 
 initializeApp();
