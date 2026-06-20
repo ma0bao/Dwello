@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { rateLimit } from 'express-rate-limit';
 
 import propertiesRouter from './routes/properties.mjs';
+import profileRouter from './routes/profile.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -73,6 +74,7 @@ app.get('/api/config', (req, res) => {
 });
 
 app.use('/api/properties', propertiesRouter);
+app.use('/api/profile', profileRouter);
 
 app.post('/api/send-email', async (req, res) => {
   if (!resend) {
